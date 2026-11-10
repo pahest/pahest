@@ -49,5 +49,14 @@ class TemplateTest(unittest.TestCase):
             template._tree(path.name)                     # raises TemplateError on a broken file
 
 
+    def test_templates_read_at_the_start_stay_available_if_the_files_go_away(self):
+        from pathlib import Path
+        from unittest import mock
+        template.preload()
+        with mock.patch.object(template, "FOLDER", Path("/nonexistent")):
+            self.assertIn("expand all", template.source("keys_session.html"))
+            self.assertIn("<nav", template.render("session_nav.html", {"list_href": "x"}))
+
+
 if __name__ == "__main__":
     unittest.main()
