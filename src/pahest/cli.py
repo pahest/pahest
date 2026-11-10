@@ -15,7 +15,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
-from . import __version__, guard, paths, precheck, profile, readable, regenerate, report, verify
+from . import HOME_URL, SLOGAN, __version__, guard, paths, precheck, profile, readable, regenerate, report, template, verify
 from .log import Log, fmt_dur, human, plural
 from .result import Ctx, Result
 from .sources import claude_code, claude_desktop, codex
@@ -297,10 +297,17 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--regenerate", nargs="?", const="", metavar="FOLDER",
                     help="rebuild the web pages and readable copies of a backup that already exists, with this "
                          "version of the tool (default: the newest backup); reads no app")
+    ap.add_argument("--templates", action="store_true",
+                    help="show the folder with the templates of the web pages and reports (HTML, CSS, script), "
+                         "so you can edit them; --regenerate then applies them to a backup")
     ap.add_argument("--version", action="version", version=f"pahest {__version__}")
     args = ap.parse_args(argv)
     if args.regenerate is not None and args.profile is not None:
         ap.error("--regenerate and --profile cannot be used together")
+    if args.templates:
+        print(f"Templates of the web pages and reports: {template.FOLDER}")
+        print("Edit them, then run  pahest --regenerate  to rebuild the pages of the newest backup.")
+        return EXIT_OK
     if sys.platform != "darwin":
         print(f"Pahest works only on macOS for now; this computer runs {_system_name()}. Nothing was read or "
               "written. Windows and Linux are not supported yet.")
@@ -355,7 +362,7 @@ def _main(args: argparse.Namespace) -> int:
         log.line(f"Another pahest run is still working (lock file {home / LOCK_NAME}). Try again later.")
         return EXIT_CANCELLED
     try:
-        log.line(log.s.bold(f"Pahest {__version__}") + log.s.dim("  ·  backups of your Claude Code and Codex sessions"))
+        log.line(log.s.bold(f"Pahest {__version__}") + log.s.dim(f"  ·  {SLOGAN}  ·  {HOME_URL}"))
         try:
             answers = profile.load(args.profile) if not interactive else profile.Answers()
         except profile.ProfileError as e:

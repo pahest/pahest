@@ -17,7 +17,7 @@ import re
 import urllib.parse
 from typing import Callable, Dict, List, NamedTuple, Optional, Sequence, Tuple
 
-from . import ABOUT, HOME_URL, NAME, __version__, template
+from . import ABOUT, HOME_URL, NAME, SLOGAN, __version__, template
 
 from .render import parse_shown
 
@@ -305,13 +305,15 @@ ASSETS = "readable/assets"
 ITEMS_JS = "readable/items.js"
 PICS_JS = "readable/images.js"
 PICS_PAGE = "readable/images.html"
-FOOTER = [("Backup report", "report.html"), ("What the folders hold", "README.md"),
-          ("Original paths and attributes", "source-manifest.jsonl")]
+BACKUP_PAGES = [("Backup report", "report.html"), ("What the folders hold", "README.md"),
+                ("Original paths and attributes", "source-manifest.jsonl")]       # first in the More menu
 
 
-def items_js(items: List[list], links: List[Tuple[str, str]], about: str) -> str:
+def items_js(items: List[list], links: List[Tuple[str, List[Tuple[str, str]]]], about: str) -> str:
     """readable/items.js. ITEMS: [title, "YYYY-MM-DDTHH:MM" local time, app, page (from the backup's top
-    folder), note, folder, opened in, helper 0/1, preview]. LINKS: more pages for the footer."""
+    folder), note, working folder (full path, ~ for the home folder), opened in, helper 0/1, preview].
+    LINKS: more pages for the top bar, in groups [(group, [(label, page)])]: the group "" is shown as
+    links in the bar, the others (one per app) in the More menu."""
     js = (f"window.ITEMS={json.dumps(items, ensure_ascii=False)};\n"
           f"window.LINKS={json.dumps(links, ensure_ascii=False)};\n"
           f"window.ABOUT={json.dumps(about, ensure_ascii=False)};\n")
@@ -347,34 +349,32 @@ def layout(title: str, body: str, page_rel: str, crumbs: List[Tuple[str, str]], 
     data.update(attrs or {})
     return template.render("page.html", {
         "title": title, "tool": NAME, "tool_version": __version__, "home_url": HOME_URL, "about": ABOUT,
+        "slogan": SLOGAN,
         "style_href": href(page_rel, ASSETS + "/style.css"), "index_href": index,
         "attrs": [{"name": k, "value": v} for k, v in data.items()],
         "crumbs": [{"label": label, "href": href(page_rel, target) if target else ""} for label, target in crumbs],
         "actions": actions,
         "keys": template.source(f"keys_{kind}.html").strip() if kind != "doc" else "",
         "body": body,
-        "footer": [{"label": label, "href": href(page_rel, t), "last": i == len(FOOTER) - 1}
-                   for i, (label, t) in enumerate(FOOTER)],
+        "backup_pages": [{"label": label, "href": href(page_rel, t)} for label, t in BACKUP_PAGES],
         "scripts": [href(page_rel, x) for x in (ITEMS_JS,) + tuple(scripts) + (ASSETS + "/app.js",)]})
 
 
 def _filters(search_hint: str, app: str = "") -> dict:
     """The values of templates/filters.html."""
     return {"search_hint": search_hint,
-            "selects": [{"key": key, "label": label} for key, label in (
+            "selects": [{"key": key, "label": label, "typed": key == "where"} for key, label in (
                 ("app", "App"), ("where", "Folder"), ("surface", "Opened in"), ("kind", "Type"), ("range", "Date"))
                 if not (key == "app" and app)]}
 
 
 def list_page(title: str, subtitle: str, page_rel: str, crumbs: List[Tuple[str, str]], items: List[list],
-              app: str = "", more: Sequence[Tuple[str, str]] = ()) -> str:
-    """The same list for every app or for one app (`app`): filters, search, newest first by day.
-    more: other pages to link under the title, such as the pictures page."""
+              app: str = "") -> str:
+    """The same list for every app or for one app (`app`): filters, search, newest first by day."""
     mine = [it for it in items if not app or it[2] == app]
     recent = sorted(mine, key=lambda it: it[1] or "", reverse=True)[:50]      # shown without JavaScript
     body = template.render("list.html", dict(
         _filters("Search titles, folders, text…", app), title=title, subtitle=subtitle,
-        more=[{"label": label, "href": href(page_rel, t)} for label, t in more],
         recent=[{"title": it[0], "href": href(page_rel, it[3]), "when": _shown(it[1])} for it in recent]))
     return layout(title, body, page_rel, crumbs, "list", {"self": page_rel, "app": app})
 

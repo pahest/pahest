@@ -40,6 +40,7 @@ from pathlib import Path
 from typing import Callable, Dict, Iterator, List, Optional, Tuple
 
 from . import HOME_URL, __version__, guard, htmlview, paths
+from .log import short_path
 from .render import human_month, human_time, jdump, parse_time, safe_name, utf8
 from .result import Ctx, Result
 from .store import DiskFull, clone_or_copy
@@ -1967,8 +1968,18 @@ def write_session_page(w: Writer, app: str, s: "Session", conv: Conv) -> None:
 
 APP_LISTS = {"Claude Code": "readable/claude-code/index.html", "Codex": "readable/codex/index.html",
              "Claude desktop": "readable/claude-desktop/index.html"}
+# Pages that only one app has, for the More menu at the top of every page: (app, [(label, Markdown file)]).
+# A new app adds its row here and its list page to APP_LISTS.
+APP_PAGES = (("Claude Code", [("What you typed (prompt history)", "readable/claude-code/prompt-history.md")]),
+             ("Codex", [("What you typed (prompt history)", "readable/codex/prompt-history.md"),
+                        ("Databases", "readable/codex/databases/index.md")]))
 CODEX_NOTE = ("Codex keeps the model's private reasoning encrypted with OpenAI's key, so nobody but OpenAI can read it; "
               "only reasoning summaries are shown when Codex saved them.")
+
+
+def _folder(path: str) -> str:
+    """A session's working folder as the lists show it: the full path, with ~ for the home folder."""
+    return short_path(path.rstrip("/")) if path else ""
 
 
 def _origin_path(store, raw_rel: str) -> str:
@@ -2000,11 +2011,10 @@ def _web(w: Writer, stamp: str, res: Result) -> None:
     items: List[list] = []
     session_of: Dict[str, Tuple[str, Session]] = {}
     for app, s in w.listed:
-        where = posixpath.basename(s.where.rstrip("/")) if s.where else ""
         pv = s.preview
         if pv.rstrip("…").strip().lower() == s.title.rstrip("…").strip().lower():
             pv = ""
-        items.append([s.title, _iso(s.last or s.started), app, pages.get(s.md, s.md), "; ".join(s.notes), where,
+        items.append([s.title, _iso(s.last or s.started), app, pages.get(s.md, s.md), "; ".join(s.notes), _folder(s.where),
                       s.surface, 1 if s.helper else 0, pv])
         session_of[s.md] = (app, s)
     # every picture of every session, once, for the pictures page (readable/images.js). Its session is an
@@ -2012,7 +2022,7 @@ def _web(w: Writer, stamp: str, res: Result) -> None:
     pics: Dict[str, list] = {}
     sessions = [(app, s, i) for i, (app, s) in enumerate(w.listed)] + [
         (app, s, [s.title, _iso(s.last or s.started), app, pages.get(s.md, s.md), "subagent",
-                  posixpath.basename(s.where.rstrip("/")) if s.where else "", s.surface, 1, ""])
+                  _folder(s.where), s.surface, 1, ""])
         for app, s in w.unlisted]
     for app, s, ref in sessions:
         for rel, kind, ts in s.pictures:
@@ -2023,12 +2033,14 @@ def _web(w: Writer, stamp: str, res: Result) -> None:
             cur = pics.get(name)
             if cur is None or (_PIC_RANK[kind], when or "~") < (_PIC_RANK[cur[1]], cur[2] or "~"):
                 pics[name] = [rel, kind, when, ref]
-    footer_links = ([("Pictures", htmlview.PICS_PAGE)] if pics else []) + [(label, pages[md]) for label, md in (
-        ("Typed into Claude Code", "readable/claude-code/prompt-history.md"),
-        ("Typed into Codex", "readable/codex/prompt-history.md"),
-        ("Codex databases", "readable/codex/databases/index.md")) if md in pages]
+    # the top bar of every page: the pictures page, then each app's own pages in the More menu
+    links = [("", [(f"Pictures ({len(pics):,})", htmlview.PICS_PAGE)] if pics else [])]
+    for app, app_pages in APP_PAGES:
+        found = [(label, pages[md]) for label, md in app_pages if md in pages]
+        if found:
+            links.append((app, found))
     about = f"Backup of {htmlview._shown_stamp(stamp)}"
-    w.text(htmlview.ITEMS_JS, htmlview.items_js(items, footer_links, about))
+    w.text(htmlview.ITEMS_JS, htmlview.items_js(items, links, about))
     w.text(f"{htmlview.ASSETS}/style.css", htmlview.style_css())
     w.text(f"{htmlview.ASSETS}/app.js", htmlview.app_js())
 
@@ -2053,22 +2065,21 @@ def _web(w: Writer, stamp: str, res: Result) -> None:
             res.problem(f"web page for {md_rel} could not be made: {type(e).__name__}: {e}")
     res.counts["web pages"] = sum(1 for r in store.manifest if r.startswith("readable/") and r.endswith(".html"))
 
-    more = []
     if pics:
         rows = sorted(pics.values(), key=lambda p: p[2] or "", reverse=True)
         w.text(htmlview.PICS_JS, htmlview.pics_js(rows))
         kinds = [(k, label, sum(1 for p in rows if p[1] == k)) for k, label in PIC_KINDS]
         w.text(htmlview.PICS_PAGE, htmlview.images_page(f"{len(rows):,} pictures from your sessions, each shown once",
                                                         kinds))
-        more = [(f"Pictures ({len(rows):,})", htmlview.PICS_PAGE)]
         res.counts["pictures on the pictures page"] = len(rows)
     apps = [a for a in APP_LISTS if any(it[2] == a for it in items)]
     for app in apps:
         n = sum(1 for it in items if it[2] == app)
         w.text(APP_LISTS[app], htmlview.list_page(f"{app} sessions", f"{n:,} sessions", APP_LISTS[app],
-                                                  [(app, "")], items, app=app, more=more))
-    w.text("index.html", htmlview.list_page("Your AI chats", "Works offline, without the apps or an account",
-                                            "index.html", [], items, more=more))
+                                                  [(app, "")], items, app=app))
+    w.text("index.html", htmlview.list_page(f"Backup of AI sessions - {htmlview._shown_stamp(stamp)}",
+                                            f"{len(items):,} sessions. Works offline, without the apps or an account.",
+                                            "index.html", [], items))
 
 
 def _readme(w: Writer, stamp: str, links: List[Tuple[str, str]]) -> None:

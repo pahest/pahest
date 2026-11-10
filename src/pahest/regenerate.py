@@ -19,7 +19,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-from . import TOOL_NAMES, __version__, guard, origins, paths, precheck, readable, report, tool_version
+from . import HOME_URL, SLOGAN, TOOL_NAMES, __version__, guard, origins, paths, precheck, readable, report, tool_version
 from .log import Log, fmt_dur, plural
 from .result import Ctx, Result
 from .store import (CHECKSUMS, DELETED_LIST, Entry, Store, Zstd, read_checksums, read_deleted_list, sha256_file,
@@ -123,7 +123,8 @@ def _build_and_check(ctx: Ctx, stamp: str, store: Store, log: Log) -> Tuple[Resu
 def run(target: Optional[str], log: Log) -> int:
     """Rebuild the pages of the backup in `target` (default: the newest in ~/pahest-backups)."""
     started = time.time()
-    log.line(log.s.bold(f"Pahest {__version__}") + log.s.dim("  ·  rebuild the pages of a backup"))
+    log.line(log.s.bold(f"Pahest {__version__}") + log.s.dim(f"  ·  {SLOGAN}  ·  {HOME_URL}"))
+    log.line("Rebuilding the pages of a backup.")
     if target:
         folder = Path(os.path.expanduser(target)).resolve()
         if folder.is_file():              # e.g. its index.html

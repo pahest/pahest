@@ -482,11 +482,20 @@ class StartScreenTest(FakeHomeTest):
                   json.dumps({"tool": "pahest", "status": "completed", "totals": {"bytes": 3 << 20}}))
         code, out = self.run_cli("--profile")
         self.assertIn(code, (0, 1), out)
+        self.assertIn("local backup for AI apps  ·  https://github.com/emirn/pahest", out.splitlines()[0])
         self.assertIn(f"Backups folder: {root}", out)
         shown = out.split("Last backups (4 in all):")[1].split("──")[0]
         self.assertIn(f"2026-10-04 10:00     3.0 MB   completed    {root}/2026-10-04-10-00-00", shown)
         self.assertIn("2026-10-02", shown)
         self.assertNotIn("2026-10-01", shown)                                  # only the newest three
+
+
+class TemplatesOptionTest(FakeHomeTest):
+    def test_it_shows_where_the_templates_are(self):
+        code, out = self.run_cli("--templates")
+        self.assertEqual(code, 0, out)
+        folder = out.split(": ", 1)[1].splitlines()[0]
+        self.assertTrue((Path(folder) / "page.html").is_file(), out)
 
 
 class OtherSystemsTest(FakeHomeTest):

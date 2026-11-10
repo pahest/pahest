@@ -617,7 +617,9 @@ class WebPagesTest(ReadableCase):
             self.assertIn(text, app_js)
         # "Show": choose what a session page shows
         for p in (index, page, (b / "readable/images.html").read_text()):          # the name, the address, the license
-            self.assertIn('<a class="brand" href="', p)
+            self.assertIn('<a class="brand" href="https://github.com/emirn/pahest"', p)
+            self.assertIn('data-set="theme"', p)                               # the View menu: colours and font
+            self.assertNotRegex(p, r'(src|href)="(https?:)?//(?!github\.com/emirn/pahest")')    # nothing is loaded from the internet
             self.assertIn('Made with <a href="https://github.com/emirn/pahest" rel="noopener">Pahest</a> 0.1.0, open source '
                           '(MIT license). Pahest is Armenian for “reserve”.', p)
         self.assertIn("Made by [Pahest](https://github.com/emirn/pahest) 0.1.0", (b / "README.md").read_text())
@@ -625,7 +627,8 @@ class WebPagesTest(ReadableCase):
         self.assertEqual(re.findall(r'data-show="(\w+)"', page), ["you", "say", "think", "tool", "app", "pics"])
         self.assertIn('data-preset="you">Only my messages', page)
         # every picture on one page, linked from the lists
-        self.assertIn('<a href="readable/images.html">Pictures (1)</a>', index)    # the same picture in two sessions: once
+        self.assertIn('["Pictures (1)", "readable/images.html"]', items)
+        self.assertIn('"/Users/me/projects/shop"', items)                      # the Folder filter shows full paths    # the same picture in two sessions: once
         gallery = (b / "readable/images.html").read_text()
         self.assertIn('data-page="images"', gallery)
         self.assertIn('<script src="images.js"></script>\n<script src="assets/app.js">', gallery)
@@ -643,5 +646,5 @@ class WebPagesTest(ReadableCase):
         self.assertNotIn("conversation -->", page)
         img = re.search(r'<img src="([^"]+)"', page).group(1)
         self.assertEqual((self.tmp / "b" / cc).parent.joinpath(urllib.parse.unquote(img)).read_bytes(), PNG)
-        raw = re.search(r'<a href="([^"]+\.jsonl)"', page).group(1)
+        raw = [h for h in re.findall(r'<a href="([^"]+\.jsonl)"', page) if "source-manifest" not in h][0]
         self.assertTrue((self.tmp / "b" / cc).parent.joinpath(urllib.parse.unquote(raw)).resolve().is_file())

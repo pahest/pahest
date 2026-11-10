@@ -45,6 +45,7 @@ Each run makes a **new, complete backup** in its own folder, named after the tim
 | `pahest` | Prechecks, questions, backup, verification, report. |
 | `pahest --profile` | The same, but with no questions: it uses the answers saved as `default`. |
 | `pahest --profile NAME` | The same, with the answers saved as `NAME`. |
+| `pahest --templates` | Shows the folder with the templates of the pages and reports. |
 
 Just before the backup starts, an interactive run asks whether to save your answers. A profile is a small JSON file in `~/pahest-backups/profiles/`. You can edit it by hand:
 
@@ -94,12 +95,14 @@ The apps' own files are kept exactly as found. Codex compresses its sessions (`.
 
 On a wide window, **Jump to** at the right lists the years. The year you are looking at opens to its months, the month to its weeks, and the week to its days, each with the number of sessions (after your filters). Click one to jump there; the highlight follows as you scroll.
 
-The time-ago text is worked out when you open the page. The footer links the backup report, what the folders hold, the original paths and attributes, and everything you typed.
+The time-ago text is worked out when you open the page. The bar at the top of every page has **Pictures**, a **More** menu (the backup report, what the folders hold, the original paths and attributes, and each app's own pages, such as everything you typed and Codex's databases) and a **View** menu (light or dark colours, and the font: sans, serif or mono, from the fonts on your Mac). Without a choice, the pages follow your Mac's light or dark mode. Nothing is loaded from the internet: no fonts, styles or scripts.
 
-Five dropdowns at the top narrow the list. Each starts at **All** and shows how many sessions each choice gives. You can combine them with the search box, which also searches the start of each session. **Reset** clears them all:
+On a session page, pictures are shown small; click one to see it large (← → move, Esc closes). `[Image #2]` in your message is a link to the picture it stands for.
+
+Five filters at the top narrow the list. Each starts at **All** and shows how many sessions each choice gives. You can combine them with the search box, which also searches the start of each session. **Reset** clears them all:
 
 - **App:** Claude Code, Codex, Claude desktop.
-- **Folder:** the project folder the session ran in.
+- **Folder:** the project folder the session ran in, with its full path. This one is a box you can type in: type a part of a path, or choose from its list, sorted by the number of sessions or A–Z.
 - **Opened in:** Desktop app, Terminal, Code editor, or Automation (sessions started by another program). This comes from what each session recorded.
 - **Type:** conversations with you, or subagents and automatic reviews that an app ran by itself.
 - **Date:** Today, Yesterday, Last 7 days, Last 30 days, Year to date.
@@ -207,7 +210,7 @@ python3 -m unittest discover -s tests -t tests      # no network, uses a fake ho
 
 The tests never touch your real data or the internet.
 
-The look of the pages and reports is in `src/pahest/templates/`, not in the Python code:
+The look of the pages and reports is in `src/pahest/templates/`, not in the Python code. `pahest --templates` shows the full path of that folder; after you edit a template, `pahest --regenerate` applies it to a backup:
 
 - `page.html`, `list.html`, `images.html`, `session.html`: the web pages.
 - `report.html`, `logs.html`: the backup report and the list of runs.

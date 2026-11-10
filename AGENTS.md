@@ -29,6 +29,8 @@ Pahest makes full local backups of Claude Code, Codex and Claude desktop data on
 - Tests: `python3 -m unittest discover -s tests -t tests`. They use a fake home folder, no network, and must pass on Python 3.9 (`/usr/bin/python3`) and a current Python.
 - The page script (`templates/app.js`) has no unit tests. After changing it, open the pages in a browser, or drive them with headless Chrome.
 - To try a change on a real backup without making a new one: `./pahest --regenerate`.
+- A new app (Gemini CLI, …) needs: a source in `sources/`, a reader in `readable.py`, its list page in `APP_LISTS` and its own pages (prompt history, databases) in `APP_PAGES`. The top bar, the More menu and the filters are built from these tables.
+- Pages load nothing from the internet: no CDN, no remote fonts, styles or scripts. Fonts are the computer's own.
 - When you add a kind of record or field from an app, show it in full, or list it as bookkeeping in `readable.py`. Add a test in `tests/test_readable.py` that the text is on the page.
 - Write messages and documentation in plain, short English: the users are not all technical.
 

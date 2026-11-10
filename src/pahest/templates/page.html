@@ -5,21 +5,43 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{{title}}</title>
 <link rel="stylesheet" href="{{style_href}}">
+<script>try{var r=document.documentElement,t=localStorage.getItem('pahest-theme'),f=localStorage.getItem('pahest-font');if(t)r.setAttribute('data-theme',t);if(f)r.setAttribute('data-font',f)}catch(e){}</script>
 </head>
 <body{{#attrs}} data-{{name}}="{{value}}"{{/attrs}}>
 <nav class="top">
-<a class="brand" href="{{index_href}}" title="{{tool}}: your AI chats, backed up">{{tool}}</a>
+<a class="brand" href="{{home_url}}" target="_blank" rel="noopener" title="{{tool}}: {{slogan}}. Opens {{home_url}}">{{tool}}</a>
 <span class="sep">·</span>
 <a href="{{index_href}}">All chats</a>
 {{#crumbs}}<span class="sep">›</span>{{#href}}<a href="{{href}}">{{label}}</a>{{/href}}{{^href}}<span>{{label}}</span>{{/href}}
 {{/crumbs}}
+<span class="gap"></span>
 {{#actions}}<span class="acts">{{{actions}}}</span>{{/actions}}
+<span id="navlinks"></span>
+<details class="showm" id="morem">
+<summary title="The report, the files of this backup, and each app's own pages">More</summary>
+<div class="menu">
+<b>This backup</b>
+{{#backup_pages}}<a href="{{href}}">{{label}}</a>
+{{/backup_pages}}
+<span id="links"></span>
+<b>{{tool}}</b>
+<a href="{{home_url}}" rel="noopener">{{tool}} on GitHub</a>
+</div>
+</details>
+<details class="showm" id="viewm">
+<summary title="Light or dark colours, and the font">View</summary>
+<div class="menu">
+<b>Colours</b>
+<div class="opts" data-set="theme"><button type="button" data-v="" title="Follows the computer: dark at night if it is set so">Auto</button><button type="button" data-v="light">Light</button><button type="button" data-v="dark">Dark</button></div>
+<b>Font</b>
+<div class="opts" data-set="font"><button type="button" data-v="">Sans</button><button type="button" data-v="serif">Serif</button><button type="button" data-v="mono">Mono</button></div>
+</div>
+</details>
 {{#keys}}<span class="keys">{{{keys}}}</span>{{/keys}}
 </nav>
 <main>{{{body}}}</main>
 <footer id="foot">
 <span id="about"></span>
-{{#footer}}<a href="{{href}}">{{label}}</a>{{^last}} · {{/last}}{{/footer}}<span id="links"></span>
 <div class="made">{{> made_with.html}}</div>
 </footer>
 {{#scripts}}<script src="{{.}}"></script>
