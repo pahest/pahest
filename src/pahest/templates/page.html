@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{{title}}</title>
 <link rel="stylesheet" href="{{style_href}}">
-<script>try{var r=document.documentElement,t=localStorage.getItem('pahest-theme'),f=localStorage.getItem('pahest-font');if(t)r.setAttribute('data-theme',t);if(f)r.setAttribute('data-font',f)}catch(e){}</script>
+<script>try{var r=document.documentElement,t=localStorage.getItem('pahest-theme'),f=localStorage.getItem('pahest-font');if(t)r.setAttribute('data-theme',t);if(f&&f!='mono')r.setAttribute('data-font',f)}catch(e){}</script>
 </head>
 <body{{#attrs}} data-{{name}}="{{value}}"{{/attrs}}>
 <nav class="top">
@@ -34,7 +34,7 @@
 <b>Colours</b>
 <div class="opts" data-set="theme"><button type="button" data-v="" title="Follows the computer: dark at night if it is set so">Auto</button><button type="button" data-v="light">Light</button><button type="button" data-v="dark">Dark</button></div>
 <b>Font</b>
-<div class="opts" data-set="font"><button type="button" data-v="">Sans</button><button type="button" data-v="serif">Serif</button><button type="button" data-v="mono">Mono</button></div>
+<div class="opts" data-set="font"><button type="button" data-v="">Mono</button><button type="button" data-v="sans">Sans</button><button type="button" data-v="serif">Serif</button></div>
 </div>
 </details>
 {{#keys}}<span class="keys">{{{keys}}}</span>{{/keys}}
