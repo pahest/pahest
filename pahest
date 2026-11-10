@@ -1,0 +1,5 @@
+#!/bin/sh
+# Run pahest straight from a git checkout, without installing it.
+HERE="$(cd "$(dirname "$0")" && pwd)"
+PY="${PYTHON:-python3}"
+PYTHONPATH="$HERE/src${PYTHONPATH:+:$PYTHONPATH}" exec "$PY" -m pahest "$@"

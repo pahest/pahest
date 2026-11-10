@@ -1,0 +1,27 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["system", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        if: matrix.python != 'system'
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Run tests
+        run: |
+          if [ "${{ matrix.python }}" = "system" ]; then PY=/usr/bin/python3; else PY=python3; fi
+          $PY --version
+          $PY -m unittest discover -s tests -t tests -v

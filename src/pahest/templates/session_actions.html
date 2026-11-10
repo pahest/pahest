@@ -1,0 +1,15 @@
+<details class="showm" id="showm">
+<summary title="Choose what the page shows; printing and copying follow it">Show</summary>
+<div class="menu">
+{{#show}}<label title="{{tip}}"><input type="checkbox" data-show="{{key}}" checked> {{label}} <span class="n"></span></label>
+{{/show}}
+<div class="pre">
+<button type="button" data-preset="you">Only my messages</button>
+<button type="button" data-preset="you,say">Conversation only</button>
+<button type="button" data-preset="">Everything</button>
+</div>
+</div>
+</details>
+<button type="button" id="expandall" title="Open every folded block and thinking section (e)">Expand all</button>
+<button type="button" id="print" title="Print, or save as PDF from the print window">Print / PDF</button>
+<a href="{{markdown_href}}" title="The same conversation as a Markdown file">Markdown</a>

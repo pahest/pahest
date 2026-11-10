@@ -1,0 +1,9 @@
+{{> session_nav.html}}
+<h1>{{title}}</h1>
+<dl class="meta">
+{{#rows}}<dt>{{label}}</dt><dd>{{{value}}}</dd>
+{{/rows}}
+</dl>
+{{#note}}<p class="note">{{note}}</p>{{/note}}
+{{{conversation}}}
+{{> session_nav.html}}

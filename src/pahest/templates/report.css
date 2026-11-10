@@ -1,0 +1,23 @@
+:root{--bg:#fbfaf8;--fg:#1d1d1f;--muted:#6e6e73;--line:#e3e1dc;--card:#fff;--ok:#1f7a3a;--warn:#9a6200;
+--bad:#b3261e;--okbg:#e7f4ea;--warnbg:#fdf1dc;--badbg:#fbe9e7;--mutedbg:#efeeeb;--link:#0b57d0;--code:#f3f2ef}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#161618;--fg:#ececec;--muted:#a1a1a6;
+--line:#2e2e32;--card:#1e1e21;--ok:#6fd08c;--warn:#f0b75a;--bad:#ff8a80;--okbg:#1b3524;--warnbg:#3a2c12;
+--badbg:#3d1d1a;--mutedbg:#2a2a2d;--link:#8ab4f8;--code:#26262a}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);
+font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:28px 16px 60px}h1{font-size:24px;margin:0 0 4px}
+h2{font-size:18px;margin:32px 0 10px}h3{font-size:15px;margin:18px 0 6px}
+.sub{color:var(--muted)}a{color:var(--link)}code{background:var(--code);padding:1px 5px;border-radius:4px;
+font:13px ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-all}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:10px 0}
+.badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:13px;font-weight:600}
+.ok{color:var(--ok);background:var(--okbg)}.warn{color:var(--warn);background:var(--warnbg)}
+.bad{color:var(--bad);background:var(--badbg)}.muted{color:var(--muted);background:var(--mutedbg)}
+.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:13px}td.num{text-align:right;font-variant-numeric:tabular-nums}
+ul{margin:6px 0;padding-left:20px}li{margin:3px 0}details summary{cursor:pointer;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+.stat b{display:block;font-size:20px}.stat span{color:var(--muted);font-size:13px}
+.brand{font-weight:700;margin:0 0 12px}.brand a{color:var(--fg);text-decoration:none}.made{margin-top:28px;font-size:13px}

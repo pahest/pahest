@@ -1,0 +1,13 @@
+{{#selects}}
+{{^typed}}
+<label>{{label}} <select data-key="{{key}}"><option value="All">All</option></select></label>
+{{/typed}}
+{{#typed}}
+<span class="combo" id="combo-{{key}}"><label for="in-{{key}}">{{label}}</label>
+<input type="text" id="in-{{key}}" autocomplete="off" spellcheck="false" title="Type a part of a path, or choose from the list">
+<div class="pop" hidden><div class="srt">Sort: <button type="button" data-sort="n">most sessions</button> · <button type="button" data-sort="a">A–Z</button></div><ul></ul></div></span>
+{{/typed}}
+{{/selects}}
+<input type="search" id="q" placeholder="{{search_hint}}" autocomplete="off">
+<span class="count" id="info"></span>
+<button type="button" class="reset" id="reset" hidden>Reset</button>
