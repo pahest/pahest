@@ -12,7 +12,7 @@ The backup is plain files on your disk. Open `index.html` in a browser to read a
 
 **It is a local backup.** It reads only files on this Mac, never connects to the internet, and never changes the apps' files. Your claude.ai and chatgpt.com chats are on the companies' servers, not on your Mac; see [Your online chats](#your-online-chats).
 
-> **Status: early version (0.1), macOS only.** It has not been tested on many Macs yet. The tool is not made by, or connected to, Anthropic or OpenAI.
+> **Status: early version (0.1), macOS only.** On Windows or Linux it stops at once with a message and reads nothing. It has not been tested on many Macs yet. The tool is not made by, or connected to, Anthropic or OpenAI.
 
 ## Quick start
 

@@ -262,6 +262,10 @@ def run_backup(log: Log, pre: precheck.Pre, answers: profile.Answers, stamp: str
     return EXIT_PROBLEMS if any_problem else EXIT_OK
 
 
+def _system_name() -> str:
+    return {"win32": "Windows", "cygwin": "Windows", "linux": "Linux"}.get(sys.platform, sys.platform)
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(prog="pahest", description=DESCRIPTION, epilog=EPILOG,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -274,6 +278,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     args = ap.parse_args(argv)
     if args.regenerate is not None and args.profile is not None:
         ap.error("--regenerate and --profile cannot be used together")
+    if sys.platform != "darwin":
+        print(f"Pahest works only on macOS for now; this computer runs {_system_name()}. Nothing was read or "
+              "written. Windows and Linux are not supported yet.")
+        return EXIT_CANCELLED
 
     os.umask(0o077)
     conflict = precheck.app_data_conflict(paths.settings_home())
@@ -326,8 +334,6 @@ def _main(args: argparse.Namespace) -> int:
     try:
         log.line(log.s.bold(f"Pahest {__version__}") + log.s.dim(f"  ·  {started:%Y-%m-%d %H:%M:%S}"))
         log.line(f"Settings and logs: {home}")
-        if sys.platform != "darwin":
-            log.warn("This version is made for macOS. Other systems are not supported yet.")
         try:
             answers = profile.load(args.profile) if not interactive else profile.Answers()
         except profile.ProfileError as e:

@@ -473,6 +473,18 @@ class ReadOnlyTest(FakeHomeTest):
         self.assertTrue((self.backups()[-1] / "codex/databases/state_5.sqlite").exists())
 
 
+class OtherSystemsTest(FakeHomeTest):
+    def test_it_stops_at_once_on_a_system_that_is_not_macos(self):
+        before = snapshot(self.home, "")
+        for platform, name in (("win32", "Windows"), ("linux", "Linux")):
+            for args in ((), ("--profile",), ("--regenerate",)):
+                with mock.patch.object(sys, "platform", platform):
+                    code, out = self.run_cli(*args)
+                self.assertEqual(code, 2, out)
+                self.assertIn(f"works only on macOS for now; this computer runs {name}", out)
+        self.assertEqual(snapshot(self.home, ""), before)               # nothing was written anywhere
+
+
 class RegenerateTest(FakeHomeTest):
     """--regenerate: the pages of an existing backup are rebuilt; nothing else changes."""
 
