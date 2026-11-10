@@ -236,7 +236,7 @@ def check_destination(pre: Pre) -> None:
         pre.needed = local + plain + readable_new
 
 
-def run(log: Log, answers: profile.Answers, interactive: bool = True) -> Pre:
+def run(log: Log, answers: profile.Answers) -> Pre:
     """Detection. Prints everything; asks nothing."""
     log.section("Prechecks")
     zstd = Zstd()

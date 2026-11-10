@@ -13,7 +13,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, TextIO
+from typing import List, TextIO
 
 ANSI_RE = re.compile(r"\033\[[0-9;]*m")
 

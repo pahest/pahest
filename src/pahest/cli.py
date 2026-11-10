@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from . import __version__, guard, paths, precheck, profile, readable, regenerate, report, verify
-from .log import Log, fmt_dur, human, plural, short_path
+from .log import Log, fmt_dur, human, plural
 from .result import Ctx, Result
 from .sources import claude_code, claude_desktop, codex
 from .sources.local import keep_previous_copy
@@ -336,7 +336,7 @@ def _main(args: argparse.Namespace) -> int:
         if not interactive:
             log.line(f"Profile: {args.profile} ({profile.path_for(args.profile)})")
         try:
-            pre = precheck.run(log, answers, interactive=interactive)
+            pre = precheck.run(log, answers)
             if interactive:
                 answers = precheck.ask(log, pre, answers)
                 if answers is None:

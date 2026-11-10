@@ -17,9 +17,20 @@ import re
 import urllib.parse
 from typing import Callable, Dict, List, NamedTuple, Optional, Sequence, Tuple
 
-from . import HOME_URL, NAME, __version__
+from . import ABOUT, HOME_URL, NAME, __version__
 
 from .render import parse_shown
+
+# What a session page can hide (the "Show" menu): key, label, what it covers, and where those parts are on
+# the page (CSS selectors). The menu, the style sheet and the script are all made from this list.
+SHOW = (("you", "Your messages", "what you typed", ".msg.you"),
+        ("say", "AI answers", "what the AI wrote to you", ".msg.ai .say"),
+        ("think", "Thinking", "the AI's visible thinking", ".msg.ai details.think,.msg.ai p.note"),
+        ("tool", "Tool calls and results", "commands, file edits, searches and their output", ".msg.ai .tool,.msg.ai .res"),
+        ("app", "Added by the app", "instructions, reminders, notes, the app's own records and messages it sent",
+         ".ctxb,.anote,.msg.auto,.msg.ai>.mb>details.ctx"),
+        ("pics", "Pictures", "pictures anywhere in the session", "main .msg img,main .ctxb img,main .anote img"))
+_HIDE_CSS = ",".join(f"body.hide-{k} {part}" for k, _, _, sel in SHOW for part in sel.split(","))
 
 CSS = """
 :root{--bg:#fbfaf8;--fg:#1f1f1c;--muted:#6b6a64;--line:#e6e3dc;--card:#fff;--code:#f4f2ed;--tag:#efede7;
@@ -152,10 +163,7 @@ details.showm label .n{margin-left:auto;padding-left:12px;color:var(--muted);fon
 details.showm .pre{display:flex;flex-wrap:wrap;gap:4px 12px;border-top:1px solid var(--line);margin-top:6px;padding-top:6px}
 details.showm .pre button,p.showing button{font:inherit;font-size:12px;color:var(--link);background:none;border:0;padding:0;cursor:pointer}
 p.showing{font-size:12px;color:var(--you);background:var(--you-bg);border-radius:6px;padding:4px 10px}
-body.hide-you .msg.you,body.hide-say .msg.ai .say,body.hide-think .msg.ai details.think,body.hide-think .msg.ai p.note,
-body.hide-tool .msg.ai .tool,body.hide-tool .msg.ai .res,body.hide-app .ctxb,body.hide-app .anote,body.hide-app .msg.auto,
-body.hide-app .msg.ai>.mb>details.ctx,body.hide-pics main .msg img,body.hide-pics main .ctxb img,body.hide-pics main .anote img,
-.msg.gone{display:none!important}
+/*HIDE*/,.msg.gone{display:none!important}
 img.hit{outline:3px solid var(--you);outline-offset:3px;scroll-margin-top:50px}
 .copy{position:absolute;top:4px;right:4px;width:24px;height:24px;border:1px solid var(--line);border-radius:5px;
 background:var(--card);color:var(--muted);cursor:pointer;opacity:0;display:flex;align-items:center;justify-content:center;padding:0}
@@ -253,7 +261,7 @@ def _speaker(text: str) -> str:
     first = re.split(r"[\s·(]", text.strip(), 1)[0].lower()
     if first == "you":
         return ' class="you"'
-    if first in ("claude", "codex", "chatgpt", "assistant", "image"):
+    if first in ("claude", "codex", "assistant"):
         return ' class="ai"'
     return ""
 
@@ -343,15 +351,14 @@ def md_to_html(md: str, link: Callable[[str], Optional[str]]) -> str:
             while i < n:
                 lm = _LIST.match(lines[i])
                 if lm:
-                    items.append((len(lm.group(1).replace("\t", "    ")), lm.group(2), lm.group(3)))
+                    items.append((len(lm.group(1).replace("\t", "    ")), lm.group(2), [lm.group(3)]))
                     i += 1
                 elif lines[i].strip() and lines[i].startswith((" ", "\t")) and items:
-                    ind, o, t = items[-1]
-                    items[-1] = (ind, o, t + "\n" + lines[i].strip())
+                    items[-1][2].append(lines[i].strip())
                     i += 1
                 else:
                     break
-            out.append(_list(items, link))
+            out.append(_list([(ind, o, "\n".join(t)) for ind, o, t in items], link))
             continue
         para = []
         while i < n and lines[i].strip() and not (para and starts_block(lines[i])) and \
@@ -400,10 +407,6 @@ def html_path(md_rel: str) -> Optional[str]:
         return None
     if md_rel.startswith("readable/"):
         return md_rel[:-3] + ".html"
-    if md_rel.startswith("claude-desktop/account/"):
-        return "readable/claude.ai/" + md_rel[len("claude-desktop/account/"):-3] + ".html"
-    if md_rel.startswith("chatgpt/"):
-        return "readable/chatgpt.com/" + md_rel[len("chatgpt/"):-3] + ".html"
     return None
 
 
@@ -452,7 +455,8 @@ def title_of(md: str, fallback: str) -> str:
 # everywhere, offline.
 
 MADE_WITH = (f'<div class="made">Made with <a href="{HOME_URL}" rel="noopener">{NAME}</a> {__version__}, '
-             'open source (MIT license). Pahest is Armenian for “reserve”.</div>')
+             f'{ABOUT}</div>')
+CSS = CSS.replace("/*HIDE*/", _HIDE_CSS)
 ASSETS = "readable/assets"
 ITEMS_JS = "readable/items.js"
 PICS_JS = "readable/images.js"
@@ -555,18 +559,8 @@ def images_page(subtitle: str, kinds: List[Tuple[str, str, int]]) -> str:
     return layout("Pictures", body, page_rel, [("Pictures", "")], "images", {"self": page_rel}, scripts=(PICS_JS,))
 
 
-# what a session page can hide (the "Show" menu): key, label, what it covers
-SHOW = (("you", "Your messages", "what you typed"),
-        ("say", "AI answers", "what the AI wrote to you"),
-        ("think", "Thinking", "the AI's visible thinking"),
-        ("tool", "Tool calls and results", "commands, file edits, searches and their output"),
-        ("app", "Added by the app", "instructions, reminders, notes, the app's own records and messages it sent"),
-        ("pics", "Pictures", "pictures anywhere in the session"))
-
-
 def session_page(title: str, rows: List[Tuple[str, str]], note: str, body: str, page_rel: str,
-                 crumbs: List[Tuple[str, str]], app_list: str, prev: Optional[list] = None,
-                 nxt: Optional[list] = None) -> str:
+                 crumbs: List[Tuple[str, str]], app_list: str) -> str:
     """One session: a header from the template, the conversation, and previous / next at the top and the
     bottom (the script fills them in, in the order of the list you came from). rows: [(label, html)]."""
     up = f'<a class="up" href="{esc(href(page_rel, app_list))}">↑ List</a>'
@@ -577,7 +571,7 @@ def session_page(title: str, rows: List[Tuple[str, str]], note: str, body: str, 
     show = ('<details class="showm" id="showm"><summary title="Choose what the page shows; printing and copying '
             'follow it">Show</summary><div class="menu">'
             + "".join(f'<label title="{esc(tip)}"><input type="checkbox" data-show="{k}" checked> {esc(label)} '
-                      f'<span class="n"></span></label>' for k, label, tip in SHOW) +
+                      f'<span class="n"></span></label>' for k, label, tip, _ in SHOW) +
             '<div class="pre"><button type="button" data-preset="you">Only my messages</button>'
             '<button type="button" data-preset="you,say">Conversation only</button>'
             '<button type="button" data-preset="">Everything</button></div></div></details>')
@@ -679,11 +673,11 @@ def conversation_html(blocks: List[dict], link: Callable[[str], Optional[str]], 
             kinds = set()                            # what the turn holds (the "Show" menu hides by kind)
             for it in b["items"]:
                 k = it[0]
-                kinds.add({"text": "say", "image": "say", "thinking": "think", "redacted": "think",
+                kinds.add({"text": "say", "thinking": "think", "redacted": "think",
                            "context": "app"}.get(k, "tool"))
                 if k == "context":
-                    ctx.append((it[1], it[2], it[4] if len(it) > 4 else ""))
-                    ctx_app = it[3] if len(it) > 3 else "the app"
+                    ctx.append((it[1], it[2], it[4]))
+                    ctx_app = it[3]
                     continue
                 if ctx:
                     parts.append(ctx_html(ctx, ctx_app))
@@ -691,12 +685,10 @@ def conversation_html(blocks: List[dict], link: Callable[[str], Optional[str]], 
                 if k == "text":
                     parts.append(f'<div class="say">{md(it[1])}</div>')
                 elif k == "thinking":
-                    parts.append(f'<details class="think"><summary>{esc(it[2] if len(it) > 2 else "Thinking")}'
+                    parts.append(f'<details class="think"><summary>{esc(it[2])}'
                                  f"</summary>{md(it[1])}</details>")
                 elif k == "redacted":
-                    label = it[1] if len(it) > 1 else "Thinking (encrypted by Anthropic; not readable)"
-                    src = f" · {inline(fix(it[2]), link)}" if len(it) > 2 and it[2] else ""
-                    parts.append(f'<p class="note">{esc(label)}{src}</p>')
+                    parts.append(f'<p class="note">{esc(it[1])} · {inline(fix(it[2]), link)}</p>')
                 elif k == "tool":
                     parts.append(f'<div class="tool"><div class="tn">{esc(it[1])}</div>{parts_html(it[2])}</div>')
                 elif k == "result":
@@ -704,8 +696,6 @@ def conversation_html(blocks: List[dict], link: Callable[[str], Optional[str]], 
                     parts.append(f'<div class="res{err}"><div class="rl">{esc(it[1])}</div>'
                                  + (code_html(Code(it[2]), "result") if it[2] else "")
                                  + "".join(md(x) for x in it[3]) + "</div>")
-                elif k == "image":
-                    parts.append(f'<div class="say">{md(it[1])}</div>')
             if ctx:
                 parts.append(ctx_html(ctx, ctx_app))
             out.append(f'<section class="msg ai" data-k="{" ".join(sorted(kinds))}"><div class="mh">'
@@ -721,7 +711,7 @@ var MONTHS=['January','February','March','April','May','June','July','August','S
 var RANGES=[['All','All'],['today','Today'],['yesterday','Yesterday'],['week','Last 7 days'],['month','Last 30 days'],['ytd','Year to date']];
 var KEYS=['app','where','surface','kind','range','q','pk'],DEF={q:'',pk:'you,generated'};
 function def(k){return DEF.hasOwnProperty(k)?DEF[k]:'All'}
-var SHOWK=['you','say','think','tool','app','pics'],HID={},anyGone=false;   /* session pages: the Show menu */
+var SHOWQ=""" + json.dumps({k: sel for k, _, _, sel in SHOW}) + r""",SHOWK=Object.keys(SHOWQ),HID={},anyGone=false;   /* session pages: the Show menu */
 var COPY='""" + COPY_ICON.replace("'", "\\'") + r"""';
 function pad(n){return (n<10?'0':'')+n}
 function parseIso(s){var m=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(s||'');return m?new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5]):null}
@@ -816,7 +806,7 @@ if(from)p.push('from='+encodeURIComponent(from));return p.join('&')}
 function match(it,st,skip){for(var i=0;i<KEYS.length;i++){var k=KEYS[i];if(k==skip||k=='q')continue;
 if(k=='pk'){if(it.pk&&(','+st.pk+',').indexOf(','+it.pk+',')<0)return false;continue}if(st[k]=='All')continue;
 if(k=='range'){if(!inRange(it.d,st.range))return false}else if(val(it,k)!=st[k])return false}
-if(st.q&&skip!='q'){var hay=(it[0]+' '+it[2]+' '+it[4]+' '+it[5]+' '+surf(it)+' '+(it[8]||'')).toLowerCase(),w=st.q.toLowerCase().split(/\s+/);
+if(st.q&&skip!='q'){var hay=it.hay||(it.hay=(it[0]+' '+it[2]+' '+it[4]+' '+it[5]+' '+surf(it)+' '+(it[8]||'')).toLowerCase()),w=st.q.toLowerCase().split(/\s+/);
 for(var j=0;j<w.length;j++)if(w[j]&&hay.indexOf(w[j])<0)return false}return true}
 var PKL={you:'you pasted',generated:'generated',tool:'from a tool',app:'app record'};
 var PICS=PAGE=='images'?(window.PICS||[]).map(function(p){var s=(typeof p[3]=='number'?ITEMS[p[3]]:p[3])||[],o=[s[0]||'',p[2],s[2]||'',s[3]||'',s[4]||'',s[5]||'',s[6]||'',s[7]||0,s[8]||''];
@@ -870,15 +860,16 @@ if(aside)aside.addEventListener('click',function(ev){var a=ev.target.closest('a[
 if(alldet)alldet.addEventListener('click',function(){setAll(!allOpen)});
 var pool=GAL?PICS:fixedApp?ITEMS.filter(function(it){return it[2]==fixedApp}):ITEMS;
 function counted(key){var c={};pool.forEach(function(it){var v=val(it,key);c[v]=(c[v]||0)+1});return c}
-var ORDER={app:['Claude Code','Codex','Claude desktop','claude.ai','ChatGPT'],surface:['Desktop app','Terminal','Code editor','Automation','Other'],kind:['Conversations','Helpers']};
+var ORDER={app:['Claude Code','Codex','Claude desktop'],surface:['Desktop app','Terminal','Code editor','Automation','Other'],kind:['Conversations','Helpers']};
 function options(key){if(key=='range')return RANGES;var c=counted(key),vals=Object.keys(c);
 if(ORDER[key])vals.sort(function(a,b){return ORDER[key].indexOf(a)-ORDER[key].indexOf(b)});else vals.sort(function(a,b){return c[b]-c[a]||a.localeCompare(b)});
 return [['All','All']].concat(vals.map(function(v){return [v,v=='Helpers'?'Subagents & reviews':v]}))}
 var OPTS={};['app','where','surface','kind','range'].forEach(function(k){OPTS[k]=options(k)});
 function fill(key){var s=document.querySelector('select[data-key="'+key+'"]');if(!s)return;
 if(OPTS[key].length<3&&key!='range'){s.parentNode.style.display='none';return}
-s.innerHTML=OPTS[key].map(function(o){var n=0;for(var i=0;i<pool.length;i++){var it=pool[i];if(!match(it,st,key))continue;
-if(key=='range'?inRange(it.d,o[0]):(o[0]=='All'||val(it,key)==o[0]))n++}
+var c={},all=0;pool.forEach(function(it){if(!match(it,st,key))return;all++;
+if(key=='range')RANGES.forEach(function(r){if(inRange(it.d,r[0]))c[r[0]]=(c[r[0]]||0)+1});else{var v=val(it,key);c[v]=(c[v]||0)+1}});
+s.innerHTML=OPTS[key].map(function(o){var n=o[0]=='All'?all:(c[o[0]]||0);
 return '<option value="'+esc(o[0])+'"'+(st[key]==o[0]?' selected':'')+(n||o[0]=='All'||st[key]==o[0]?'':' disabled')+'>'+esc(o[1])+' ('+n.toLocaleString()+')</option>'}).join('');
 s.className=st[key]=='All'?'':'set'}
 function dirty(){return KEYS.some(function(k){return (k!='app'||!fixedApp)&&(k!='pk'||GAL)&&st[k]!=null&&st[k]!==def(k)})}
@@ -999,10 +990,8 @@ var meta=document.querySelector('main dl.meta'),note=document.createElement('p')
 note.innerHTML='Some parts of this session are hidden (the <b>Show</b> menu at the top). <button type="button">Show everything</button>';
 if(meta)meta.parentNode.insertBefore(note,meta.nextSibling);
 note.querySelector('button').onclick=function(){applyShow({});saveShow()};
-var Q={you:'.msg.you',say:'.msg.ai .say',think:'.msg.ai details.think,.msg.ai p.note',tool:'.msg.ai .tool,.msg.ai .res',
-app:'.ctxb,.anote,.msg.auto,.msg.ai>.mb>details.ctx',pics:'main .msg img,main .ctxb img,main .anote img'};
 m.addEventListener('toggle',function(){if(!m.open||counted)return;counted=true;   /* counted when first opened: big pages open faster */
-[].forEach.call(m.querySelectorAll('label'),function(l){var k=l.querySelector('input').getAttribute('data-show'),n=document.querySelectorAll(Q[k]).length;
+[].forEach.call(m.querySelectorAll('label'),function(l){var k=l.querySelector('input').getAttribute('data-show'),n=document.querySelectorAll(SHOWQ[k]).length;
 l.querySelector('.n').textContent=n.toLocaleString();if(!n)l.classList.add('none')})});
 m.addEventListener('change',function(e){var k=e.target.getAttribute('data-show');if(!k)return;var h2=Object.assign({},HID);h2[k]=!e.target.checked;applyShow(h2);saveShow()});
 m.addEventListener('click',function(e){var b=e.target.closest('button[data-preset]');if(!b)return;var keep=b.getAttribute('data-preset').split(',').filter(Boolean),h2={};

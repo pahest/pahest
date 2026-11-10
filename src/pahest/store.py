@@ -166,14 +166,6 @@ def iter_files(src: Path, exclude: Callable[[Path], bool] = lambda rel: False, f
         yield from walk(lp, lrel, via_link=True)
 
 
-def tree_size(src: Path, exclude: Callable[[Path], bool] = lambda rel: False) -> Tuple[int, int]:
-    files = nbytes = 0
-    for _p, _rel, st in iter_files(src, exclude):
-        files += 1
-        nbytes += st.st_size
-    return files, nbytes
-
-
 # ── clonefile (APFS) ────────────────────────────────────────────────────────
 
 _CLONE_NOFOLLOW = 0x0001
@@ -213,6 +205,12 @@ def clonefile(src: Path, dst: Path) -> bool:
     raise OSError(e, os.strerror(e), str(src))
 
 
+def clone_or_copy(src: Path, dst: Path) -> None:
+    """A copy of a file: an APFS clone when possible (instant, no extra space), else an ordinary copy."""
+    if not clonefile(src, dst):
+        shutil.copyfile(src, dst)
+
+
 def can_clone(src_dir: Path, dst_dir: Path) -> bool:
     """True if files from src_dir can be cloned into dst_dir (same APFS volume)."""
     try:
@@ -237,16 +235,8 @@ def can_clone(src_dir: Path, dst_dir: Path) -> bool:
 # ── hashing ─────────────────────────────────────────────────────────────────
 
 def sha256_file(path: Path) -> Tuple[str, int]:
-    h = hashlib.sha256()
-    n = 0
     with open(path, "rb") as f:
-        while True:
-            b = f.read(CHUNK)
-            if not b:
-                break
-            h.update(b)
-            n += len(b)
-    return h.hexdigest(), n
+        return sha256_stream(f)
 
 
 def sha256_stream(f: BinaryIO) -> Tuple[str, int]:

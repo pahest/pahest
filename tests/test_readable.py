@@ -95,7 +95,9 @@ def codex_session() -> bytes:
     )
 
 
-class ReadableTest(TempDirTest):
+class ReadableCase(TempDirTest):
+    """A backup folder (self.store) for the readable step to work on."""
+
     def setUp(self):
         super().setUp()
         self.store = Store(self.tmp / "b")
@@ -103,6 +105,14 @@ class ReadableTest(TempDirTest):
 
     def read(self, rel):
         return (self.tmp / "b" / rel).read_text()
+
+    def js_data(self, rel: str, name: str):
+        """The value of `window.<name>` in one of the pages' data files (items.js, images.js)."""
+        [line] = [x for x in self.read(rel).split("\n") if x.startswith(f"window.{name}=")]
+        return json.loads(line[len(f"window.{name}="):].rstrip(";"))
+
+
+class ReadableTest(ReadableCase):
 
     def test_claude_code_session_becomes_readable_markdown(self):
         s = self.store
@@ -210,10 +220,9 @@ class ReadableTest(TempDirTest):
         self.assertIn("Fix the login page", self.read("readable/claude-code/index.md"))
 
 
-class OddInputTest(TempDirTest):
+class OddInputTest(ReadableCase):
     def test_strange_dates_deep_nesting_and_odd_lines_do_not_stop_the_step(self):
-        store = Store(self.tmp / "b")
-        ctx = Ctx(store, quiet_log(), {}, "2026-11-09", Zstd())
+        store, ctx = self.store, self.ctx
         deep = "[" * 100000 + "]" * 100000
         store.add_bytes("claude-code/projects/-p/odd.jsonl", jl(
             {"type": "user", "timestamp": "0001-01-01T00:00:00Z", "message": {"content": "year one"}},
@@ -230,14 +239,9 @@ class OddInputTest(TempDirTest):
         self.assertIn("still here", text)
 
 
-class CompletenessTest(TempDirTest):
+class CompletenessTest(ReadableCase):
     """Nothing in a conversation is left out or shortened: every text of every kind of record is on the
     web page and in the Markdown copy (only bookkeeping such as ids and times may be missing)."""
-
-    def setUp(self):
-        super().setUp()
-        self.store = Store(self.tmp / "b")
-        self.ctx = Ctx(self.store, quiet_log(), {}, "2026-11-09", Zstd())
 
     def words(self, rel: str) -> str:
         import html as h
@@ -390,14 +394,9 @@ def b64(data: bytes) -> str:
     return base64.b64encode(data).decode()
 
 
-class PicturesTest(TempDirTest):
+class PicturesTest(ReadableCase):
     """A picture stored as base64 text anywhere in a record is saved as an image file and shown as a
     picture (never as base64 text), and text is never changed by the way pages link to files."""
-
-    def setUp(self):
-        super().setUp()
-        self.store = Store(self.tmp / "b")
-        self.ctx = Ctx(self.store, quiet_log(), {}, "2026-11-09", Zstd())
 
     def page_texts(self, prefix: str):
         [md] = [r for r in self.store.manifest if r.startswith(prefix) and r.endswith(").md")]
@@ -405,7 +404,7 @@ class PicturesTest(TempDirTest):
 
     def gallery(self) -> dict:
         """The pictures page's list: picture file name -> where it came from."""
-        rows = json.loads((self.tmp / "b" / "readable/images.js").read_text().split("=", 1)[1].rstrip(";\n"))
+        rows = self.js_data("readable/images.js", "PICS")
         return {f.rsplit("/", 1)[1]: kind for f, kind, when, item in rows}
 
     def assert_picture(self, data: bytes, md: str, text: str, page: str):
@@ -515,13 +514,13 @@ class PicturesTest(TempDirTest):
         self.assertEqual(self.gallery(), {n(e): "app",        # a note from the app
                                           n(f): "tool",       # a subagent's task comes from the main agent
                                           n(g): "tool"})
-        rows = json.loads((self.tmp / "b" / "readable/images.js").read_text().split("=", 1)[1].rstrip(";\n"))
+        rows = self.js_data("readable/images.js", "PICS")
         [sub] = [r[3] for r in rows if r[0].endswith(n(f))]
         self.assertEqual(sub[4], "subagent")                  # a page not in the lists: its row is given here
         self.assertTrue((self.tmp / "b" / sub[3]).is_file())
 
 
-class WebPagesTest(TempDirTest):
+class WebPagesTest(ReadableCase):
     def test_markdown_becomes_safe_html(self):
         from pahest import htmlview
         md = ("# Title <b>x</b>\n\n### You · 10:00\n\nHello <script>alert(1)</script> **bold** and `a<b`\n"
@@ -565,24 +564,18 @@ class WebPagesTest(TempDirTest):
         self.assertEqual(only("real.png"), "real.png")
 
     def test_backup_gets_index_html_and_a_page_per_conversation(self):
-        store = Store(self.tmp / "b")
-        ctx = Ctx(store, quiet_log(), {}, "2026-11-09", Zstd())
+        store, ctx = self.store, self.ctx
         store.add_bytes("claude-code/projects/-Users-me-projects-shop/s1.jsonl", cc_session())
         store.add_bytes("codex/sessions/2026/11/07/rollout-2026-11-07T09-00-00-019a.jsonl", codex_session())
-        store.add_bytes("chatgpt/personal/conversations/c1.md", b"# Trip ideas\n\n## You \xc2\xb7 x\n\nhi\n")
-        store.add_bytes("chatgpt/personal/index.md", b"# ChatGPT: personal\n\n1 chats, newest first.\n\n"
-                        b"| Title | Updated | Created | Notes | Files |\n|---|---|---|---|---|\n"
-                        b"| [Trip ideas](conversations/c1.md) | 2026-11-08 10:00 | 2026-11-01 | archived | "
-                        b"[json](conversations/c1.json) |\n")
         res = readable.run(ctx, "2026-11-09-10-00-00")
         self.assertEqual(res.failed, [])
         b = self.tmp / "b"
         index = (b / "index.html").read_text()
         items = (b / "readable/items.js").read_text()
-        for text in ("Fix the login page", "Add a health endpoint", "Trip ideas", "report.html", 'id="q"',
+        for text in ("Fix the login page", "Add a health endpoint", "report.html", 'id="q"',
                      'data-page="list"', "readable/assets/style.css", "readable/assets/app.js", "readable/items.js"):
             self.assertIn(text, index)
-        for text in ("Claude Code", "Codex", "ChatGPT", "Use port 8080"):     # the last one: a session preview
+        for text in ("Claude Code", "Codex", "Use port 8080"):     # the last one: a session preview
             self.assertIn(text, items)
         self.assertNotIn("```", items)                                         # previews are plain text
         self.assertNotIn('"/clear"', items)                                    # a slash command is not a preview
@@ -598,8 +591,6 @@ class WebPagesTest(TempDirTest):
         for h in hrefs:
             if h.endswith(".html") and not h.startswith("http") and h != "report.html":
                 self.assertTrue((self.tmp / "b" / urllib.parse.unquote(h)).is_file(), h)
-        chat = (self.tmp / "b" / "readable/chatgpt.com/personal/conversations/c1.html").read_text()
-        self.assertIn("All chats", chat)
         [cc] = [r for r in store.manifest if r.startswith("readable/claude-code/") and r.endswith(").html")]
         page = (self.tmp / "b" / cc).read_text()
         self.assertEqual(page.count('<nav class="pn">'), 2)                   # previous / next, top and bottom
@@ -639,12 +630,12 @@ class WebPagesTest(TempDirTest):
         self.assertIn('data-page="images"', gallery)
         self.assertIn('<script src="images.js"></script><script src="assets/app.js">', gallery)
         self.assertIn('data-pk="you"', gallery)
-        pics = json.loads((b / "readable/images.js").read_text().split("=", 1)[1].rstrip(";\n"))
+        pics = self.js_data("readable/images.js", "PICS")
         [(file, kind, when, item)] = pics                                       # shown 3 times, listed once …
         self.assertEqual(kind, "you")                                           # … as one you pasted, the first time
         self.assertEqual((b / file).read_bytes(), PNG)
         self.assertEqual(when, "2026-11-07T13:00")
-        items = json.loads((b / "readable/items.js").read_text().split("\n")[0].split("=", 1)[1].rstrip(";"))
+        items = self.js_data("readable/items.js", "ITEMS")
         self.assertEqual(items[item][2], "Codex")                               # its session
         self.assertNotIn("```", page)
         self.assertIn('data-page="session"', page)

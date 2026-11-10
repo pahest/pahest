@@ -19,7 +19,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-from . import __version__, guard, origins, paths, precheck, readable, report
+from . import TOOL_NAMES, __version__, guard, origins, paths, precheck, readable, report, tool_version
 from .log import Log, fmt_dur, plural
 from .result import Ctx, Result
 from .store import (CHECKSUMS, DELETED_LIST, Entry, Store, Zstd, read_checksums, read_deleted_list, sha256_file,
@@ -29,14 +29,6 @@ ASIDE = ".regenerate-old"          # the old pages, until the new ones are compl
 DONE = ".done"                     # inside ASIDE: the new pages are complete; the new checksum list is next to it
 TOP_PAGES = ("index.html", "README.md")
 EXIT_OK, EXIT_PROBLEMS, EXIT_CANCELLED, EXIT_INTERRUPTED = 0, 1, 2, 130
-
-
-TOOL_NAMES = ("pahest", "revdoku-backup")     # backups made before the tool was renamed are rebuilt too
-
-
-def _version(versions) -> str:
-    v = versions if isinstance(versions, dict) else {}
-    return str(v.get("pahest") or v.get("revdoku_backup") or "?")
 
 
 def is_page(rel: str) -> bool:
@@ -149,7 +141,7 @@ def run(target: Optional[str], log: Log) -> int:
     data = json.loads((folder / "backup.json").read_text(encoding="utf-8"))
     log.line(f"Backup: {folder}")
     log.line(log.s.dim(f"  made {str(data.get('started') or '?').replace('T', ' ')} with {data.get('tool')} "
-                       f"{_version(data.get('versions'))}; status: {data.get('status', '?')}"))
+                       f"{tool_version(data.get('versions'))}; status: {data.get('status', '?')}"))
     guard.allow(folder)                   # from here on, writing is possible only in this backup (and logs)
     log.attach(folder / "backup.log")     # the backup's own log keeps a record of this
     log.section("Rebuild the pages")

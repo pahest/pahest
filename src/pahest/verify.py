@@ -22,7 +22,7 @@ from typing import Dict, List
 from . import guard
 from .log import Log, human
 from .result import Result
-from .store import CHUNK, TMP_MARK, Store, Zstd, clonefile, iter_files, sha256_stream
+from .store import CHUNK, TMP_MARK, Store, Zstd, clone_or_copy, iter_files, sha256_stream
 
 ROOT_META = {"report.html", "backup.log", "backup.json", "checksums.sha256", "deleted-at-source.txt"}
 IMAGE_MAGIC = {
@@ -82,14 +82,12 @@ def _check_sqlite(path: Path) -> str:
     tmp = Path(tempfile.mkdtemp(prefix="pahest-verify-", dir=str(path.parent)))
     try:
         copy = tmp / path.name
-        if not clonefile(path, copy):
-            shutil.copyfile(path, copy)
+        clone_or_copy(path, copy)
         for ext in ("-wal", "-shm"):
             side = path.with_name(path.name + ext)
             if side.exists():
                 dst = copy.with_name(copy.name + ext)
-                if not clonefile(side, dst):
-                    shutil.copyfile(side, dst)
+                clone_or_copy(side, dst)
         guard.check_write(copy, "open database")
         con = sqlite3.connect(copy.as_uri() + "?mode=ro", uri=True, timeout=5)
         try:

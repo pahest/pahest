@@ -4,12 +4,11 @@ from __future__ import annotations
 import html
 import json
 import os
-import shutil
 from dataclasses import asdict
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from . import HOME_URL, NAME, __version__
+from . import ABOUT, HOME_URL, NAME, TOOL_NAMES, __version__, tool_version
 from .log import fmt_dur, human
 
 STATUS_CLASS = {"ok": "ok", "completed": "ok", "problems": "warn", "completed with problems": "warn",
@@ -81,7 +80,7 @@ BRAND = f"<div class=brand><a href='{HOME_URL}' rel='noopener'>{NAME}</a></div>"
 
 def made_with(version) -> str:
     return (f"<p class='sub made'>Made with <a href='{HOME_URL}' rel='noopener'>{NAME}</a> {e(version or '?')}, "
-            "open source (MIT license). Pahest is Armenian for “reserve”.</p>")
+            f"{ABOUT}</p>")
 
 
 def html_report(data: dict, base_href: Optional[str] = None) -> str:
@@ -182,7 +181,7 @@ def html_report(data: dict, base_href: Optional[str] = None) -> str:
 
     out.append("<h2>App versions</h2><div class='card scroll'><table><tr><th>What</th><th>Version</th><th>Where</th></tr>")
     vers = dict(data.get("versions") or {})
-    vers.setdefault("pahest", vers.get("revdoku_backup"))     # a backup made before the tool was renamed
+    vers["pahest"] = tool_version(vers)
     for group in ("apps", "cli"):
         for name, v in (vers.get(group) or {}).items():
             if v:
@@ -258,7 +257,7 @@ def write_logs_index(logs_dir: Path) -> Path:
             d = json.loads(p.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             continue
-        if d.get("tool") in ("pahest", "revdoku-backup"):     # also logs from before the tool was renamed
+        if d.get("tool") in TOOL_NAMES:
             runs.append(d)
     runs.sort(key=lambda d: d.get("name", ""), reverse=True)
     out = ["<!doctype html><html lang=en><head><meta charset=utf-8>",

@@ -14,12 +14,11 @@ the backup's own copies (never the apps' files) and writes:
   readable/codex/prompt-history.md
   readable/codex/databases/<db>/<table>.json  the Codex databases as plain JSON
 
-claude.ai and chatgpt.com chats already have a .md next to every .json (README.md links
-them). The readable copies are made again in every backup from the saved files, so they
-also cover sessions kept from earlier backups after an app deleted them.
+  readable/images.html                        every picture of every session
 
-Long tool output is shortened in the Markdown; the raw transcript, linked at the top of
-every file, always has the full text.
+The readable copies are made again in every backup from the saved files, so they also
+cover sessions kept from earlier backups after an app deleted them. Nothing is shortened;
+the raw transcript is linked at the top of every file.
 """
 from __future__ import annotations
 
@@ -28,7 +27,6 @@ import binascii
 import functools
 import hashlib
 import json
-import os
 import posixpath
 import re
 import shlex
@@ -36,16 +34,15 @@ import shutil
 import sqlite3
 import tempfile
 import time
-from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Dict, Iterator, List, Optional, Tuple
 
 from . import HOME_URL, __version__, guard, htmlview, paths
-from .render import human_month, human_time, jdump, parse_shown, parse_time, safe_name, utf8
+from .render import human_month, human_time, jdump, parse_time, safe_name, utf8
 from .result import Ctx, Result
-from .store import DiskFull, clonefile
+from .store import DiskFull, clone_or_copy
 
 ID = "readable"
 ROOT = "readable"
@@ -212,7 +209,7 @@ def _conv_pictures(conv: "Conv") -> List[Tuple[str, str, Optional[datetime]]]:
                 scan(item[1], "app", ts)
         elif t == "ai":
             for it in b["items"]:
-                if it[0] in ("text", "thinking", "image"):
+                if it[0] in ("text", "thinking"):
                     scan(it[1], "tool", ts)
                 elif it[0] == "tool":
                     scan(it[2], "tool", ts)
@@ -221,6 +218,11 @@ def _conv_pictures(conv: "Conv") -> List[Tuple[str, str, Optional[datetime]]]:
                 elif it[0] == "context":
                     scan(it[2], "app", ts)
     return list(found.values())
+
+
+def _iso(dt: Optional[datetime]) -> str:
+    """Local time as the pages' scripts read it ("2026-10-24T10:00")."""
+    return _local(dt, "%Y-%m-%dT%H:%M")
 
 
 def _rel(from_md: str, to: str) -> str:
@@ -252,7 +254,8 @@ def _one_line(text: str, limit: int = 80) -> str:
 
 def _plain(text: str, limit: int = 280) -> str:
     """Markdown as one line of plain text, for the previews in index.html."""
-    t = re.sub(r"!\[[^\]]*\]\([^)]*\)", " ", text or "")             # pictures
+    text = (text or "")[:50 * limit]                                 # the start is enough (a prompt can be megabytes)
+    t = re.sub(r"!\[[^\]]*\]\([^)]*\)", " ", text)                   # pictures
     t = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", t)                   # links: keep the words
     t = re.sub(r"^(`{3,}|~{3,}).*$", " ", t, flags=re.M)              # code fences
     t = re.sub(r"[`*_>#]+", " ", t)
@@ -633,6 +636,8 @@ class Conv:
                 return  # several encrypted reasoning parts in a row: one note says it
             item = ("redacted", item[1] if len(item) > 1 else "Thinking (encrypted by Anthropic; not readable)",
                     self.src())
+        elif item[0] == "thinking" and len(item) < 3:
+            item += ("Thinking",)
         self.turn["items"].append(item)
 
     def context(self, app: str, ts: Optional[datetime], label: str, text: str, lang: str = "",
@@ -741,24 +746,20 @@ class Conv:
                     if kind == "text":
                         out += [it[1], ""]
                     elif kind == "thinking":
-                        out += [f"> **{it[2] if len(it) > 2 else 'Thinking'}**", ">",
+                        out += [f"> **{it[2]}**", ">",
                                 "\n".join("> " + x for x in it[1].split("\n")), ""]
                     elif kind == "redacted":
-                        out += [f"> *{it[1]}*" + (f" · {it[2]}" if len(it) > 2 and it[2] else ""), ""]
+                        out += [f"> *{it[1]}* · {it[2]}", ""]
                     elif kind == "tool":
                         out += [f"**{it[1]}**", ""] + [_md(x) + "\n" for x in it[2]]
                     elif kind == "result":
                         if it[2]:
                             out += [f"*{it[1]}:*", "", _fence(it[2]), ""]
                         out += [_md(x) + "\n" for x in it[3]]
-                    elif kind == "image":
-                        out.append(it[1] + "\n")
                     elif kind == "context":
-                        out += self._ctx_md(it[3], it[1], it[2], it[4] if len(it) > 4 else "")
+                        out += self._ctx_md(it[3], it[1], it[2], it[4])
         return "\n".join(out)
 
-    def html(self, link) -> str:
-        return htmlview.conversation_html(self.blocks, link, _local)
 
 
 def claude_surface(entrypoint: str) -> str:
@@ -785,14 +786,6 @@ def codex_surface(meta: dict) -> str:
         return "Automation"
     if "tui" in o or "cli" in o or src == "cli":
         return "Terminal"
-    return ""
-
-
-def _cc_text_of(content) -> str:
-    if isinstance(content, str):
-        return content
-    if isinstance(content, list):
-        return "\n".join(b.get("text", "") for b in content if isinstance(b, dict) and b.get("type") == "text")
     return ""
 
 
@@ -1082,6 +1075,28 @@ def _cc_project_name(enc: str) -> str:
     return safe_name(name or "home", limit=80)
 
 
+def _session_file(started: Optional[datetime], title: str, tag: str) -> str:
+    """The file name of a session's Markdown copy: "<date> <title> (<tag>).md"."""
+    when = _local(started, "%Y-%m-%d %H-%M") or "undated"
+    return safe_name(f"{when} {title[:60]} ({tag})", limit=110) + ".md"
+
+
+def _session_link(base: str, s: Session) -> str:
+    """A session as a link in its app's index.md."""
+    return f"[{_cell(s.title)}]({_link(_rel(base + '/index.md', s.md))})"
+
+
+def _render_session(res: Result, rel: str, render: Callable[[], Optional[Session]]) -> Optional[Session]:
+    """One session's readable copy; an odd session is reported and must not stop the others."""
+    try:
+        return render()
+    except DiskFull:
+        raise
+    except Exception as e:  # noqa: BLE001
+        res.problem(f"could not make a readable copy of {rel}: {e}")
+        return None
+
+
 def claude_code_part(w: Writer, res: Result) -> Optional[str]:
     base = f"{ROOT}/claude-code"
     store = w.ctx.store
@@ -1099,16 +1114,9 @@ def claude_code_part(w: Writer, res: Result) -> Optional[str]:
 
         def md_for(title, started, rel=rel, folder=folder, sub=sub):
             stem = posixpath.basename(rel)[:-6]
-            when = _local(started, "%Y-%m-%d %H-%M") or "undated"
-            name = safe_name(f"{when} {title[:60]} ({stem[-8:] if not sub else stem})", limit=110) + ".md"
+            name = _session_file(started, title, stem if sub else stem[-8:])
             return w.unique(f"{folder}/{'subagents/' if sub else ''}{name}")
-        try:
-            s = render_claude_code(w, rel, folder, md_for)
-        except DiskFull:
-            raise
-        except Exception as e:  # noqa: BLE001 - one odd session must not stop the others
-            res.problem(f"could not make a readable copy of {rel}: {e}")
-            continue
+        s = _render_session(res, rel, lambda: render_claude_code(w, rel, folder, md_for))
         if not s:
             continue
         if sub:
@@ -1119,7 +1127,7 @@ def claude_code_part(w: Writer, res: Result) -> Optional[str]:
             sessions.append(s)
     res.counts["Claude Code sessions as Markdown"] = len(sessions)
     w.listed += [("Claude Code", s) for s in sessions]
-    hist = _guarded(res, "Claude Code prompt history", lambda: _claude_history(w, base, sessions))
+    hist = _guarded(res, "Claude Code prompt history", lambda: _claude_history(w, base))
     lines = [f"# Claude Code sessions", "",
              f"{len(sessions):,} sessions, newest first. Each file is one session; the raw transcript is linked "
              "at the top of each file.", ""]
@@ -1136,8 +1144,7 @@ def claude_code_part(w: Writer, res: Result) -> Optional[str]:
         lines += [f"## {posixpath.basename(g)}", ""] + ([f"`{where}`", ""] if where else [])
         lines += ["| Last message | Session | Prompts | Note |", "|---|---|---:|---|"]
         for s in ss:
-            lines.append(f"| {_local(s.last)} | [{_cell(s.title)}]({_link(_rel(base + '/index.md', s.md))}) | "
-                         f"{s.messages} | {'; '.join(s.notes)} |")
+            lines.append(f"| {_local(s.last)} | {_session_link(base, s)} | {s.messages} | {'; '.join(s.notes)} |")
         lines.append("")
     n_sub = sum(len(v) for v in subagents.values())
     if n_sub:
@@ -1162,7 +1169,7 @@ def _pasted(w: Writer, item) -> str:
     return body + "\n(the text was in Claude Code's paste cache, which no longer had it at the time of this backup)"
 
 
-def _claude_history(w: Writer, base: str, sessions: List[Session]) -> Optional[str]:
+def _claude_history(w: Writer, base: str) -> Optional[str]:
     rel = "claude-code/history.jsonl"
     if rel not in w.ctx.store.manifest:
         return None
@@ -1202,24 +1209,15 @@ def desktop_local_part(w: Writer, res: Result) -> Optional[str]:
     sessions = []
     for rel in rels:
         def md_for(title, started, rel=rel):
-            when = _local(started, "%Y-%m-%d %H-%M") or "undated"
-            stem = posixpath.basename(rel)[:-6]
-            return w.unique(f"{base}/{safe_name(f'{when} {title[:60]} ({stem[-8:]})', limit=110)}.md")
-        try:
-            s = render_claude_code(w, rel, base, md_for, app="Claude desktop")
-        except DiskFull:
-            raise
-        except Exception as e:  # noqa: BLE001 - one odd session must not stop the others
-            res.problem(f"could not make a readable copy of {rel}: {e}")
-            continue
+            return w.unique(f"{base}/{_session_file(started, title, posixpath.basename(rel)[-14:-6])}")
+        s = _render_session(res, rel, lambda: render_claude_code(w, rel, base, md_for, app="Claude desktop"))
         if s:
             sessions.append(s)
     if not sessions:
         return None
     sessions.sort(key=lambda x: x.last or x.started or _EPOCH, reverse=True)
     lines = ["# Claude desktop: local sessions", "", "| Last message | Session | Prompts | Note |", "|---|---|---:|---|"]
-    lines += [f"| {_local(s.last)} | [{_cell(s.title)}]({_link(_rel(base + '/index.md', s.md))}) | {s.messages} | "
-              f"{'; '.join(s.notes)} |" for s in sessions]
+    lines += [f"| {_local(s.last)} | {_session_link(base, s)} | {s.messages} | {'; '.join(s.notes)} |" for s in sessions]
     w.text(f"{base}/index.md", "\n".join(lines) + "\n")
     res.counts["Claude desktop local sessions as Markdown"] = len(sessions)
     w.listed += [("Claude desktop", s) for s in sessions]
@@ -1278,8 +1276,8 @@ def _codex_result(out, save_image: Callable, pics: Optional[Pics] = None) -> Tup
             if isinstance(x, dict) and x.get("type") in ("input_text", "output_text", "text") and \
                     set(x) <= {"type", "text"}:
                 texts.append(str(x.get("text") or ""))
-            elif isinstance(x, dict) and x.get("type") in ("input_image", "image") and save_image(x.get("image_url")):
-                extras.append(_pic_md(save_image(x.get("image_url"))))
+            elif isinstance(x, dict) and x.get("type") in CODEX_IMAGE and (src := save_image(x.get("image_url"))):
+                extras.append(_pic_md(src))
                 rest = {k: v for k, v in x.items() if k not in ("type", "image_url")}
                 if rest:                                  # e.g. the detail the picture was sent with
                     extras += _json_parts(rest, pics)
@@ -1289,7 +1287,7 @@ def _codex_result(out, save_image: Callable, pics: Optional[Pics] = None) -> Tup
     return json.dumps(out, ensure_ascii=False, indent=1), []
 
 
-def _codex_call(name: str, args, pics: Optional[Pics] = None) -> list:
+def _codex_call(args, pics: Optional[Pics] = None) -> list:
     """A function call's arguments: the command (if any) readable, then every other argument as JSON."""
     if isinstance(args, str):
         try:
@@ -1311,6 +1309,7 @@ def _codex_call(name: str, args, pics: Optional[Pics] = None) -> list:
     return _json_parts(args, pics)
 
 
+CODEX_IMAGE = ("input_image", "image")
 CODEX_COMPACT_BOOKKEEPING = ("compaction_response_id", "latest_token_usage_record", "window_number", "window_id",
                              "first_window_id", "previous_window_id", "replacement_history_metadata")
 
@@ -1347,7 +1346,7 @@ def _codex_kept(items: list, seen: set, save_image: Callable, pics: Optional[Pic
                     texts.append(str(c.get("text") or "").strip())
                     view.append(c)
                     continue
-                src = save_image(c.get("image_url") or c.get("source")) if kind in ("input_image", "image") else None
+                src = save_image(c.get("image_url") or c.get("source")) if kind in CODEX_IMAGE else None
                 if src:
                     images.append("image:" + src)
                     view.append(c)                    # shown as the picture (see Pics)
@@ -1612,8 +1611,7 @@ def render_codex(w: Writer, rel: str, opener: Optional[Callable], titles: Dict[s
                     extra = {k: v for k, v in b.items() if k not in ("type", "text")}
                     if extra:
                         parts += _json_parts(extra, pics)
-                elif b.get("type") in ("input_image", "image") and save_image(b.get("image_url") or b.get("source")):
-                    src = save_image(b.get("image_url") or b.get("source"))
+                elif b.get("type") in CODEX_IMAGE and (src := save_image(b.get("image_url") or b.get("source"))):
                     seen.add("image:" + src)
                     parts.append(_pic_md(src))
                     extra = {k: v for k, v in b.items() if k not in ("type", "image_url", "source")}
@@ -1651,7 +1649,7 @@ def render_codex(w: Writer, rel: str, opener: Optional[Callable], titles: Dict[s
             _remember(p.get("arguments"), seen)
             ns = f"{p['namespace']} · " if isinstance(p.get("namespace"), str) and p["namespace"] else ""
             conv.add("Codex", ts, "tool", ns + str(p.get("name") or "tool"),
-                     _codex_call(p.get("name"), p.get("arguments"), pics))
+                     _codex_call(p.get("arguments"), pics))
         elif kind == "custom_tool_call":
             name = str(p.get("name") or "tool")
             ns = f"{p['namespace']} · " if isinstance(p.get("namespace"), str) and p["namespace"] else ""
@@ -1660,7 +1658,7 @@ def render_codex(w: Writer, rel: str, opener: Optional[Callable], titles: Dict[s
             conv.add("Codex", ts, "tool", ns + name, [_code(inp, "diff" if name == "apply_patch" else "")]
                      if isinstance(inp, str) else _dumped(inp, pics))
         elif kind == "local_shell_call":
-            conv.add("Codex", ts, "tool", "shell", _codex_call("shell", (p.get("action") or {})))
+            conv.add("Codex", ts, "tool", "shell", _codex_call(p.get("action") or {}))
         elif kind in ("function_call_output", "custom_tool_call_output"):
             text, extras = _codex_result(p.get("output"), save_image, pics)
             if text.strip():
@@ -1732,8 +1730,7 @@ def render_codex(w: Writer, rel: str, opener: Optional[Callable], titles: Dict[s
         ("Raw transcript", f"[{posixpath.basename(rel)}]({_link(_rel(md_rel, rel))})"),
         ("Status", "; ".join(notes)),
     ])
-    note = ["*Codex keeps the model's private reasoning encrypted with OpenAI's key, so nobody but OpenAI can "
-            "read it; only reasoning summaries are shown when Codex saved them.*", ""]
+    note = [f"*{CODEX_NOTE}*", ""]
     w.text(md_rel, "\n".join(head + note) + "\n" + SESSION_MARK + "\n\n" + text_body.strip() + "\n")
     s = Session(title, md_rel, rel, started, last, prompts, human_month(started) or "undated",
                 str(meta.get("cwd") or ""), notes, surface, helper, preview, ", ".join(models),
@@ -1778,17 +1775,10 @@ def codex_part(w: Writer, res: Result) -> Optional[str]:
                 continue
             opener = (lambda p=w.raw_path(rel): w.ctx.zstd.open(p))
 
-        def md_for(title, started, sid, rel=rel):
-            when = _local(started, "%Y-%m-%d %H-%M") or "undated"
+        def md_for(title, started, sid):
             month = _local(started, "%Y-%m") or "undated"
-            return w.unique(f"{base}/{month}/{safe_name(f'{when} {title[:60]} ({sid[-8:]})', limit=110)}.md")
-        try:
-            s = render_codex(w, rel, opener, titles, md_for)
-        except DiskFull:
-            raise
-        except Exception as e:  # noqa: BLE001 - one odd session must not stop the others
-            res.problem(f"could not make a readable copy of {rel}: {e}")
-            continue
+            return w.unique(f"{base}/{month}/{_session_file(started, title, sid[-8:])}")
+        s = _render_session(res, rel, lambda: render_codex(w, rel, opener, titles, md_for))
         if s:
             sessions.append(s)
     if skipped_zst:
@@ -1798,7 +1788,7 @@ def codex_part(w: Writer, res: Result) -> Optional[str]:
         return None
     res.counts["Codex sessions as Markdown"] = len(sessions)
     w.listed += [("Codex", s) for s in sessions]
-    hist = _guarded(res, "Codex prompt history", lambda: _codex_history(w, base, sessions))
+    hist = _guarded(res, "Codex prompt history", lambda: _codex_history(w, base))
     dbs = _guarded(res, "Codex databases", lambda: _codex_databases(w, base, res))
     sessions.sort(key=lambda x: x.started or _EPOCH, reverse=True)
     lines = ["# Codex sessions", "", f"{len(sessions):,} sessions, newest first. Each file is one session; the raw "
@@ -1813,13 +1803,13 @@ def codex_part(w: Writer, res: Result) -> Optional[str]:
         if s.group != month:
             month = s.group
             lines += ["", f"## {month}", "", "| Started | Session | Folder | Prompts | Note |", "|---|---|---|---:|---|"]
-        lines.append(f"| {_local(s.started)} | [{_cell(s.title)}]({_link(_rel(base + '/index.md', s.md))}) | "
+        lines.append(f"| {_local(s.started)} | {_session_link(base, s)} | "
                      f"{_cell(posixpath.basename(s.where))} | {s.messages} | {'; '.join(s.notes)} |")
     w.text(f"{base}/index.md", "\n".join(lines) + "\n")
     return f"{base}/index.md"
 
 
-def _codex_history(w: Writer, base: str, sessions: List[Session]) -> Optional[str]:
+def _codex_history(w: Writer, base: str) -> Optional[str]:
     rel = "codex/history.jsonl"
     if rel not in w.ctx.store.manifest:
         return None
@@ -1865,12 +1855,10 @@ def _codex_databases(w: Writer, base: str, res: Result) -> Optional[str]:
         try:
             copy = tmp / name
             src = w.raw_path(rel)
-            if not clonefile(src, copy):
-                shutil.copyfile(src, copy)
+            clone_or_copy(src, copy)
             wal = Path(str(src) + "-wal")
             if wal.exists():
-                if not clonefile(wal, Path(str(copy) + "-wal")):
-                    shutil.copyfile(wal, Path(str(copy) + "-wal"))
+                clone_or_copy(wal, Path(str(copy) + "-wal"))
             guard.check_write(copy, "open database")
             con = sqlite3.connect(copy.as_uri() + "?mode=ro", uri=True, timeout=5)
             try:
@@ -1911,16 +1899,6 @@ def _guarded(res: Result, what: str, fn: Callable[[], Optional[str]]) -> Optiona
         return None
 
 
-def _online_indexes(store) -> List[Tuple[str, str]]:
-    out = []
-    for rel in sorted(store.manifest):
-        if re.match(r"^claude-desktop/account/[^/]+/index\.md$", rel):
-            out.append(("claude.ai chats", rel))
-        elif re.match(r"^chatgpt/[^/]+/index\.md$", rel):
-            out.append(("chatgpt.com chats", rel))
-    return out
-
-
 def run(ctx: Ctx, stamp: str) -> Result:
     t0 = time.time()
     res = Result(ID, "readable", "Readable copies", "chats as Markdown, pictures as files", ROOT,
@@ -1939,7 +1917,6 @@ def run(ctx: Ctx, stamp: str) -> Result:
             continue
         if idx:
             links.append((title, idx))
-    links += _online_indexes(ctx.store)
     res.counts["images saved as files"] = len(w.images)
     _readme(w, stamp, links)
     ctx.log.line(f"  {ctx.log.DOT} Web pages (index.html)…")
@@ -1958,25 +1935,7 @@ def _section(page_rel: str) -> List[Tuple[str, str]]:
     for prefix, name, idx in SECTION_OF:
         if page_rel.startswith(prefix):
             return [(name, idx if page_rel != idx else "")]
-    m = re.match(r"^readable/(claude\.ai|chatgpt\.com)/([^/]+)/", page_rel)
-    if m:
-        idx = f"readable/{m.group(1)}/{m.group(2)}/index.html"
-        return [(m.group(1), idx if page_rel != idx else "")]
     return []
-
-
-def _online_rows(store, index_rel: str) -> List[Tuple[str, str, str, str]]:
-    """(title, updated, md path, notes) from an index.md of claude.ai or chatgpt.com chats."""
-    rows = []
-    try:
-        text = store.path(index_rel).read_text(encoding="utf-8")
-    except OSError:
-        return rows
-    for m in re.finditer(r"^\| \[(?P<t>(?:\\\||[^|])+?)\]\((?P<md>[^)]+)\) \| (?P<u>[^|]*)\| [^|]*\| (?P<n>[^|]*)\|",
-                         text, re.M):
-        md = posixpath.normpath(posixpath.join(posixpath.dirname(index_rel), m.group("md").strip("<>")))
-        rows.append((m.group("t").replace("\\|", "|"), m.group("u").strip(), md, m.group("n").strip()))
-    return rows
 
 
 def write_session_page(w: Writer, app: str, s: "Session", conv: Conv) -> None:
@@ -1989,15 +1948,12 @@ def write_session_page(w: Writer, app: str, s: "Session", conv: Conv) -> None:
     def fix(md: str) -> str:              # links to files (pictures, the raw transcript), relative to this page
         return _fix_paths(md, s.md, s.raw)
     body = htmlview.conversation_html(conv.blocks, link, fix)          # everything, nothing shortened
-
-    def iso(dt: Optional[datetime]) -> str:
-        return _local(dt, "%Y-%m-%dT%H:%M")
     origin = _origin_path(store, s.raw)
     rows = [("App", E(app + (f" · {s.surface}" if s.surface else ""))),
             ("Folder", f"<code>{E(s.where)}</code>" if s.where else ""),
             ("Git branch", f"<code>{E(s.branch)}</code>" if s.branch else ""),
-            ("Started", htmlview.when_html(iso(s.started))),
-            ("Last message", htmlview.when_html(iso(s.last))),
+            ("Started", htmlview.when_html(_iso(s.started))),
+            ("Last message", htmlview.when_html(_iso(s.last))),
             ("Your messages", str(s.messages)), ("Model", E(s.model)), ("Version", E(s.version)),
             ("Session", f"<code>{E(s.sid)}</code>" if s.sid else ""),
             ("Original file", f"<code>{E(origin)}</code>" if origin else ""),
@@ -2006,7 +1962,7 @@ def write_session_page(w: Writer, app: str, s: "Session", conv: Conv) -> None:
             ("Status", E("; ".join(s.notes)))]
     app_list = APP_LISTS.get(app, "index.html")
     w.text(page_rel, htmlview.session_page(s.title, rows, CODEX_NOTE if app == "Codex" else "", body, page_rel,
-                                           [(app, app_list)], app_list, None, None))
+                                           [(app, app_list)], app_list))
 
 
 APP_LISTS = {"Claude Code": "readable/claude-code/index.html", "Codex": "readable/codex/index.html",
@@ -2040,9 +1996,6 @@ def _web(w: Writer, stamp: str, res: Result) -> None:
     def exists(rel: str) -> bool:
         return rel in known or rel in folders
 
-    def iso(dt: Optional[datetime]) -> str:
-        return _local(dt, "%Y-%m-%dT%H:%M")      # local time, read by the pages' date filters
-
     # one list of every session, shared by all pages (readable/items.js)
     items: List[list] = []
     session_of: Dict[str, Tuple[str, Session]] = {}
@@ -2051,29 +2004,21 @@ def _web(w: Writer, stamp: str, res: Result) -> None:
         pv = s.preview
         if pv.rstrip("…").strip().lower() == s.title.rstrip("…").strip().lower():
             pv = ""
-        items.append([s.title, iso(s.last or s.started), app, pages.get(s.md, s.md), "; ".join(s.notes), where,
+        items.append([s.title, _iso(s.last or s.started), app, pages.get(s.md, s.md), "; ".join(s.notes), where,
                       s.surface, 1 if s.helper else 0, pv])
         session_of[s.md] = (app, s)
-    for label, idx_md in _online_indexes(store):
-        rows = _online_rows(store, idx_md)
-        site = "claude.ai" if idx_md.startswith("claude-desktop/") else "ChatGPT"
-        org = htmlview.title_of(store.path(idx_md).read_text(encoding="utf-8", errors="replace"), site)
-        for title, updated, md, notes in rows:
-            dt = parse_shown(updated)
-            items.append([title, dt.strftime("%Y-%m-%dT%H:%M") if dt else "", site, pages.get(md, md), notes,
-                          org if org != site else "", "Desktop app", 0, ""])
     # every picture of every session, once, for the pictures page (readable/images.js). Its session is an
     # index in items.js, or (for a page not in the lists, such as a Claude Code subagent) a row like them.
     pics: Dict[str, list] = {}
     sessions = [(app, s, i) for i, (app, s) in enumerate(w.listed)] + [
-        (app, s, [s.title, iso(s.last or s.started), app, pages.get(s.md, s.md), "subagent",
+        (app, s, [s.title, _iso(s.last or s.started), app, pages.get(s.md, s.md), "subagent",
                   posixpath.basename(s.where.rstrip("/")) if s.where else "", s.surface, 1, ""])
         for app, s in w.unlisted]
     for app, s, ref in sessions:
         for rel, kind, ts in s.pictures:
             if kind == "you" and s.helper:
                 kind = "tool"                   # a subagent's task comes from the main agent, not from you
-            when = iso(ts or s.started)
+            when = _iso(ts or s.started)
             name = posixpath.basename(rel)      # the same picture saved in two folders is listed once
             cur = pics.get(name)
             if cur is None or (_PIC_RANK[kind], when or "~") < (_PIC_RANK[cur[1]], cur[2] or "~"):

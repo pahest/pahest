@@ -18,10 +18,6 @@ def settings_home() -> Path:
     return home() / "pahest-backups"
 
 
-def default_backups_folder() -> Path:
-    return settings_home()
-
-
 def app_support() -> Path:
     return home() / "Library" / "Application Support"
 

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from .log import Log
 from .store import Previous, Store, Zstd
@@ -11,7 +11,7 @@ from .store import Previous, Store, Zstd
 @dataclass
 class Result:
     id: str                         # unique part id, e.g. "claude-code"
-    source: str                     # claude-code | codex | claude-desktop | chatgpt
+    source: str                     # claude-code | codex | claude-desktop
     name: str                       # "Claude desktop"
     part: str                       # "local sessions"
     folder: str                     # path inside the backup, e.g. "claude-code"
