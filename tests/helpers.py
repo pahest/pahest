@@ -8,12 +8,17 @@ import re
 import sqlite3
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
+
+# Pages show local time; the tests expect UTC+4 whatever the computer's own time zone is.
+os.environ["TZ"] = "Etc/GMT-4"
+time.tzset()
 
 from pahest.log import Log  # noqa: E402
 
