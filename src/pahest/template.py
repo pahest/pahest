@@ -30,9 +30,18 @@ class TemplateError(ValueError):
     pass
 
 
+@functools.lru_cache(maxsize=None)
 def source(name: str) -> str:
     """The text of a template file."""
     return (FOLDER / name).read_text(encoding="utf-8")
+
+
+def preload() -> None:
+    """Read every template now, so a run does not depend on the files staying in place while it works
+    (and stops at once, with a clear error, if one is missing)."""
+    for f in sorted(FOLDER.iterdir()):
+        if f.is_file() and not f.name.startswith("."):
+            source(f.name)
 
 
 def _parse(text: str, name: str) -> list:

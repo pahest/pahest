@@ -19,7 +19,7 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/emirn/pahest"
+Homepage = "https://github.com/pahest/pahest"
 
 [project.scripts]
 pahest = "pahest.cli:main"

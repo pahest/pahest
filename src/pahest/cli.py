@@ -26,21 +26,14 @@ EXIT_OK, EXIT_PROBLEMS, EXIT_CANCELLED, EXIT_INTERRUPTED = 0, 1, 2, 130
 LOCK_NAME = ".pahest.lock"
 
 DESCRIPTION = """\
-Make a full local backup of your Claude Code and Codex sessions (and the Claude desktop
-app's local data) into a new folder named after the start time.
-
-Every run checks what can be backed up, asks what it needs, makes the backup, verifies
-it, and writes report.html and index.html. It only reads the apps' files and never
-connects to the internet. Settings and logs live in ~/pahest-backups."""
+Local backup for AI apps: copies your Claude Code and Codex sessions into ~/pahest-backups
+and makes them readable offline. It only reads the apps' files and never goes online."""
 
 EPILOG = """\
 examples:
-  pahest                  ask the questions, then back up everything
-  pahest --profile        no questions: use the answers saved as "default"
-  pahest --profile work   no questions: use the answers saved as "work"
-  pahest --regenerate     rebuild index.html and the readable pages of the newest backup
-  pahest --regenerate ~/pahest-backups/2026-11-09-17-29-11
-                                  the same for that backup (nothing is backed up again)
+  pahest                  make a backup (asks first)
+  pahest --profile        make a backup without questions, with saved answers
+  pahest --regenerate     rebuild the web pages of the newest backup
 """
 
 

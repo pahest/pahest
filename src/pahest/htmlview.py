@@ -10,6 +10,8 @@ links to web pages (http, https, mailto) and to files inside the backup are made
 """
 from __future__ import annotations
 
+import functools
+import hashlib
 import html
 import json
 import posixpath
@@ -339,6 +341,13 @@ def app_js() -> str:
                                       "show_selectors": json.dumps({k: sel for k, _, _, sel in SHOW})})
 
 
+@functools.lru_cache(maxsize=None)
+def _asset_version() -> str:
+    """Changes when the style sheet or the script changes. It is added to their addresses in every page, so a
+    browser (Safari keeps local files in memory) does not go on using an old copy after the pages are rebuilt."""
+    return hashlib.sha1((style_css() + app_js()).encode("utf-8")).hexdigest()[:8]
+
+
 def layout(title: str, body: str, page_rel: str, crumbs: List[Tuple[str, str]], kind: str,
            attrs: Optional[Dict[str, str]] = None, actions: str = "", scripts: Tuple[str, ...] = ()) -> str:
     """The one page template (templates/page.html). kind: list | images | session | doc.
@@ -350,14 +359,14 @@ def layout(title: str, body: str, page_rel: str, crumbs: List[Tuple[str, str]], 
     return template.render("page.html", {
         "title": title, "tool": NAME, "tool_version": __version__, "home_url": HOME_URL, "about": ABOUT,
         "slogan": SLOGAN,
-        "style_href": href(page_rel, ASSETS + "/style.css"), "index_href": index,
+        "style_href": href(page_rel, ASSETS + "/style.css") + "?v=" + _asset_version(), "index_href": index,
         "attrs": [{"name": k, "value": v} for k, v in data.items()],
         "crumbs": [{"label": label, "href": href(page_rel, target) if target else ""} for label, target in crumbs],
         "actions": actions,
         "keys": template.source(f"keys_{kind}.html").strip() if kind != "doc" else "",
         "body": body,
         "backup_pages": [{"label": label, "href": href(page_rel, t)} for label, t in BACKUP_PAGES],
-        "scripts": [href(page_rel, x) for x in (ITEMS_JS,) + tuple(scripts) + (ASSETS + "/app.js",)]})
+        "scripts": [href(page_rel, x) + "?v=" + _asset_version() for x in (ITEMS_JS,) + tuple(scripts) + (ASSETS + "/app.js",)]})
 
 
 def _filters(search_hint: str, app: str = "") -> dict:

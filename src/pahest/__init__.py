@@ -3,7 +3,7 @@
 __version__ = "0.1.0"
 NAME = "Pahest"
 SLOGAN = "local backup for AI apps"
-HOME_URL = "https://github.com/emirn/pahest"
+HOME_URL = "https://github.com/pahest/pahest"
 ABOUT = "open source (MIT license). Pahest is Armenian for “reserve”."
 TOOL_NAMES = ("pahest", "revdoku-backup")     # backup.json "tool": the second is the name before the rename
 

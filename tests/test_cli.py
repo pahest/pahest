@@ -482,7 +482,7 @@ class StartScreenTest(FakeHomeTest):
                   json.dumps({"tool": "pahest", "status": "completed", "totals": {"bytes": 3 << 20}}))
         code, out = self.run_cli("--profile")
         self.assertIn(code, (0, 1), out)
-        self.assertIn("local backup for AI apps  ·  https://github.com/emirn/pahest", out.splitlines()[0])
+        self.assertIn("local backup for AI apps  ·  https://github.com/pahest/pahest", out.splitlines()[0])
         self.assertIn(f"Backups folder: {root}", out)
         shown = out.split("Last backups (4 in all):")[1].split("──")[0]
         self.assertIn(f"2026-10-04 10:00     3.0 MB   completed    {root}/2026-10-04-10-00-00", shown)
@@ -550,7 +550,7 @@ class RegenerateTest(FakeHomeTest):
         code, out = self.run_cli("--regenerate", str(b))
         self.assertEqual(code, 0, out)
         self.assertIn("with revdoku-backup 0.1.0", out)
-        self.assertIn('Made with <a href="https://github.com/emirn/pahest"', (b / "report.html").read_text())
+        self.assertIn('Made with <a href="https://github.com/pahest/pahest"', (b / "report.html").read_text())
         self.assert_checksums_match(b)
 
     def test_pages_are_rebuilt_in_place_and_nothing_else_changes(self):

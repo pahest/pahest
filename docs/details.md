@@ -2,7 +2,7 @@
 
 *Pahest* (պահեստ) is Armenian for “reserve”: something kept aside in case it is needed.
 
-Pahest makes full local backups of your AI coding sessions on macOS. It is open source (MIT license): [github.com/emirn/pahest](https://github.com/emirn/pahest). One command saves everything these apps keep on your Mac:
+Pahest makes full local backups of your AI coding sessions on macOS. It is open source (MIT license): [github.com/pahest/pahest](https://github.com/pahest/pahest). One command saves everything these apps keep on your Mac:
 
 - **Claude Code**: every session transcript and the files around it (plans, to-do lists, file checkpoints, pasted images, settings, skills)
 - **Codex**: the CLI, the code-editor extension and the desktop app (sessions, pictures, its databases, settings)
@@ -19,24 +19,14 @@ The backup is plain files on your disk. Open `index.html` in a browser to read a
 You need macOS and Python 3.9 or newer. The `python3` that comes with Apple's Command Line Tools works. Nothing else needs to be installed.
 
 ```sh
-git clone https://github.com/emirn/pahest.git
+git clone https://github.com/pahest/pahest.git
 cd pahest
 ./pahest
 ```
 
-Or install it as a command with `pipx install git+https://github.com/emirn/pahest` (or `uv tool install …`) and run `pahest`.
+Or install it as a command with `pipx install git+https://github.com/pahest/pahest` (or `uv tool install …`) and run `pahest`.
 
-## How a run works
-
-Every run does the same five steps:
-
-1. **Prechecks.** The tool finds the apps, their versions, the data on disk, the free disk space and your earlier backups. It shows a short list (the details go into `backup.log`) and writes nothing yet.
-2. **Questions.** It asks only what it needs: where to save, whether to start, and whether to save your answers as a profile.
-3. **Backup.** It backs up everything without stopping, shows progress, and then makes the readable copies.
-4. **Verification.** It reads every file back from the new backup and checks it (see below).
-5. **Report.** It writes `report.html` into the backup and a copy into `~/pahest-backups/logs/`.
-
-Each run makes a **new, complete backup** in its own folder, named after the time the run started. Nothing is ever skipped because it "did not change".
+Each run checks what is on the Mac, asks one question, makes a **new, complete backup** in a folder named after the start time, verifies it and writes a report. Nothing is ever skipped because it "did not change".
 
 ## Options
 

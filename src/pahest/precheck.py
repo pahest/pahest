@@ -256,9 +256,11 @@ def run(log: Log, answers: profile.Answers) -> Pre:
         return f"{in_data[data_key]} (data)" if in_data.get(data_key) else "CLI not found"
 
     rows = [
-        ("Claude Code", cli_ver("Claude Code", "Claude Code (newest session)"), pre.scans["claude-code"]),
-        ("Codex", cli_ver("Codex CLI", "Codex (newest session)"), pre.scans["codex"]),
-        ("Claude desktop", versions.short(apps.get("Claude desktop (Claude.app)")), pre.scans["claude-desktop"]),
+        ("Claude Code (terminal and desktop app)", cli_ver("Claude Code", "Claude Code (newest session)"),
+         pre.scans["claude-code"]),
+        ("Codex (terminal and ChatGPT desktop app)", cli_ver("Codex CLI", "Codex (newest session)"), pre.scans["codex"]),
+        ("Claude desktop app (Cowork, settings)", versions.short(apps.get("Claude desktop (Claude.app)")),
+         pre.scans["claude-desktop"]),
     ]
     for label, ver, sc in rows:
         mark = log.OK if sc.found else log.DOT
@@ -267,9 +269,8 @@ def run(log: Log, answers: profile.Answers) -> Pre:
             size = (f"{plural(sc.items, sc.item_label)} · " if sc.items else "") + \
                 f"{plural(sc.files, 'files')} · {human(sc.bytes)}"
         status = sc.note or "not found"
-        log.line(f"  {mark} {label:<15} {ver:<14} {size or log.s.dim(status)}")
-        if sc.files:
-            log.detail(f"      {sc.where}")
+        log.line(f"  {mark} {label:<42} {size or log.s.dim(status)}")
+        log.detail(f"      version: {ver}" + (f" · {sc.where}" if sc.files else ""))
     comp = pre.scans["codex"].compressed
     if comp and zstd.available:
         log.detail(f"      Codex sessions are zstd-compressed; plain copies will be added (≈ {human(comp * CODEX_PLAIN_RATIO)}).")

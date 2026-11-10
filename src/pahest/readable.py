@@ -39,7 +39,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Dict, Iterator, List, Optional, Tuple
 
-from . import HOME_URL, __version__, guard, htmlview, paths
+from . import HOME_URL, __version__, guard, htmlview, paths, template
 from .log import short_path
 from .render import human_month, human_time, jdump, parse_time, safe_name, utf8
 from .result import Ctx, Result
@@ -1902,6 +1902,7 @@ def _guarded(res: Result, what: str, fn: Callable[[], Optional[str]]) -> Optiona
 
 def run(ctx: Ctx, stamp: str) -> Result:
     t0 = time.time()
+    template.preload()
     res = Result(ID, "readable", "Readable copies", "chats as Markdown, pictures as files", ROOT,
                  item_label="lists")
     w = Writer(ctx, res)
