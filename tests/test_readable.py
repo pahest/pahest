@@ -631,7 +631,7 @@ class WebPagesTest(ReadableCase):
         self.assertIn('"/Users/me/projects/shop"', items)                      # the Folder filter shows full paths    # the same picture in two sessions: once
         gallery = (b / "readable/images.html").read_text()
         self.assertIn('data-page="images"', gallery)
-        self.assertIn('<script src="images.js"></script>\n<script src="assets/app.js">', gallery)
+        self.assertRegex(gallery, r'<script src="images\.js\?v=(\w{8})"></script>\n<script src="assets/app\.js\?v=\1">')
         self.assertIn('data-pk="you"', gallery)
         pics = self.js_data("readable/images.js", "PICS")
         [(file, kind, when, item)] = pics                                       # shown 3 times, listed once …

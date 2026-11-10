@@ -289,6 +289,7 @@ else if(GAL&&(K(e)=='ArrowDown'||K(e)=='ArrowUp')){e.preventDefault();moveRow(K(
 else if(GAL&&(K(e)=='ArrowRight'||K(e)=='ArrowLeft')){e.preventDefault();move(K(e)=='ArrowRight'?1:-1)}
 else if(GAL&&K(e)==' '&&sel>=0){e.preventDefault();lbOpen(+list.querySelectorAll(ROW)[sel].getAttribute('data-i'))}
 else if(K(e)=='j'||K(e)=='ArrowDown'){e.preventDefault();move(1)}else if(K(e)=='k'||K(e)=='ArrowUp'){e.preventDefault();move(-1)}
+else if(K(e)=='e'&&!GAL){setAll(!allOpen)}
 else if(K(e)=='d'&&!GAL){var li=list.querySelectorAll('li')[sel],h=li?li.parentNode.previousElementSibling:null;
 if(h&&h.classList.contains('day'))setDay(h,!isOpen(h.getAttribute('data-day')));else setAll(!allOpen)}
 else if((K(e)=='Enter'||K(e)=='o')&&sel>=0){var r=list.querySelectorAll(ROW)[sel];
