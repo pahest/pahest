@@ -4,7 +4,7 @@
 --line:#2e2e32;--card:#1e1e21;--ok:#6fd08c;--warn:#f0b75a;--bad:#ff8a80;--okbg:#1b3524;--warnbg:#3a2c12;
 --badbg:#3d1d1a;--mutedbg:#2a2a2d;--link:#8ab4f8;--code:#26262a}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);
-font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 main{max-width:1100px;margin:0 auto;padding:28px 16px 60px}h1{font-size:24px;margin:0 0 4px}
 h2{font-size:18px;margin:32px 0 10px}h3{font-size:15px;margin:18px 0 6px}
 .sub{color:var(--muted)}a{color:var(--link)}code{background:var(--code);padding:1px 5px;border-radius:4px;

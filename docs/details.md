@@ -85,7 +85,7 @@ The apps' own files are kept exactly as found. Codex compresses its sessions (`.
 
 On a wide window, **Jump to** at the right lists the years. The year you are looking at opens to its months, the month to its weeks, and the week to its days, each with the number of sessions (after your filters). Click one to jump there; the highlight follows as you scroll.
 
-The time-ago text is worked out when you open the page. The bar at the top of every page has **Pictures**, a **More** menu (the backup report, what the folders hold, the original paths and attributes, and each app's own pages, such as everything you typed and Codex's databases) and a **View** menu (light or dark colours, and the font: sans, serif or mono, from the fonts on your Mac). Without a choice, the pages follow your Mac's light or dark mode. Nothing is loaded from the internet: no fonts, styles or scripts.
+The time-ago text is worked out when you open the page. The bar at the top of every page has **Pictures**, a **More** menu (the backup report, what the folders hold, the original paths and attributes, and each app's own pages, such as everything you typed and Codex's databases) and a **View** menu (light or dark colours, and the font: mono (the default), sans or serif, from the fonts on your Mac). Without a choice, the pages follow your Mac's light or dark mode. Nothing is loaded from the internet: no fonts, styles or scripts.
 
 On a session page, pictures are shown small; click one to see it large (← → move, Esc closes). `[Image #2]` in your message is a link to the picture it stands for.
 
