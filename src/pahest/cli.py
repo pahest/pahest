@@ -307,6 +307,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         return EXIT_CANCELLED
 
     os.umask(0o077)
+    # Python would save compiled copies (.pyc) of modules it loads, next to Python itself: this tool writes
+    # only in its own folders, so that is switched off.
+    sys.dont_write_bytecode = True
     conflict = precheck.app_data_conflict(paths.settings_home())
     if conflict:
         print(f"pahest cannot use its settings folder {paths.settings_home()}: {conflict}.")

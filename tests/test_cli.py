@@ -506,6 +506,16 @@ class RebuildChoiceTest(FakeHomeTest):
         self.assertIn(f"Rebuild the web pages and reports of the last backup ({self.backups()[-1].name})", out.getvalue())
 
 
+class NoBytecodeTest(FakeHomeTest):
+    def test_python_is_told_not_to_write_compiled_files_next_to_itself(self):
+        from unittest import mock
+        with mock.patch.object(sys, "dont_write_bytecode", False):
+            self.save_profile()
+            code, out = self.run_cli("--profile")
+            self.assertEqual(code, 0, out)
+            self.assertTrue(sys.dont_write_bytecode)
+
+
 class TemplatesOptionTest(FakeHomeTest):
     def test_it_shows_where_the_templates_are(self):
         code, out = self.run_cli("--templates")
