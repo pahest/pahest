@@ -369,7 +369,7 @@ class LocalOnlyCliTest(FakeHomeTest):
                 mock.patch.object(subprocess, "run", side_effect=AssertionError("a program was run")):
             code, out = self.run_cli("--profile")
         self.assertEqual(code, 0, out)
-        self.assertIn("never goes online", out)
+        self.assertIn("Not included: chats on claude.ai and chatgpt.com", out)
         self.assertNotIn("Keychain", out)
         data = json.loads((self.backups()[-1] / "backup.json").read_text())
         self.assertEqual({r["id"] for r in data["results"]},
@@ -645,7 +645,6 @@ class InteractiveTest(FakeHomeTest):
         [b] = self.backups()
         log = (b / "backup.log").read_text()
         self.assertIn("? Make a backup now? [Y/n] y", log)
-        self.assertIn("── Questions", log)
         self.assertIn("Last backups: none yet.", text)
         self.assertIn("Press Ctrl+C to stop it at any time", text)
         self.assertIn(f"Backup folder:  {b}", text)                              # where it is, and links to open

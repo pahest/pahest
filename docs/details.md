@@ -30,7 +30,7 @@ Or install it as a command with `pipx install git+https://github.com/emirn/pahes
 
 Every run does the same five steps:
 
-1. **Prechecks.** The tool finds the apps, their versions, the data on disk, the free disk space and your earlier backups. It shows all of this and writes nothing yet.
+1. **Prechecks.** The tool finds the apps, their versions, the data on disk, the free disk space and your earlier backups. It shows a short list (the details go into `backup.log`) and writes nothing yet.
 2. **Questions.** It asks only what it needs: where to save, whether to start, and whether to save your answers as a profile.
 3. **Backup.** It backs up everything without stopping, shows progress, and then makes the readable copies.
 4. **Verification.** It reads every file back from the new backup and checks it (see below).

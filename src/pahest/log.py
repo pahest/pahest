@@ -128,6 +128,10 @@ class Log:
         print(text, file=self.out, flush=True)
         self._to_files(text)
 
+    def detail(self, text: str = "") -> None:
+        """A line for the log file only: detail that would crowd the screen."""
+        self._to_files(text)
+
     def ok(self, text: str) -> None: self.line(f"  {self.OK} {text}")
     def warn(self, text: str) -> None: self.line(f"  {self.WARN} {text}")
     def fail(self, text: str) -> None: self.line(f"  {self.FAIL} {text}")

@@ -22,9 +22,7 @@ from .store import TMP_MARK, Previous, Zstd, can_clone, load_previous
 STAMP_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}$")
 LEFTOVER_RE = re.compile(r"^(\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2})-in-progress$")
 PART_IDS = [claude_code.ID, codex.ID, claude_desktop.LOCAL_ID, "readable"]
-ONLINE_NOTE = ("Your claude.ai and chatgpt.com chats are not on this Mac, and this tool never goes online. "
-               "To keep them, use each app's own export: Claude: Settings → Privacy → Export data; "
-               "ChatGPT: Settings → Data controls → Export data.")
+ONLINE_NOTE = "Not included: chats on claude.ai and chatgpt.com (not on this Mac). Use each app's “Export data”."
 CODEX_PLAIN_RATIO = 3.0   # measured: plain sessions are ~2.9x their .zst size
 READABLE_RATIO = 0.15     # measured: Markdown + pictures + web pages are ~15% of the transcripts
 
@@ -237,14 +235,16 @@ def check_destination(pre: Pre) -> None:
 
 
 def run(log: Log, answers: profile.Answers) -> Pre:
-    """Detection. Prints everything; asks nothing."""
-    log.section("Prechecks")
+    """Detection. Prints a short list on the screen and the details into the log file; asks nothing."""
+    log.detail()
+    log.detail("── Prechecks")
     zstd = Zstd()
     vers = versions.collect(zstd)
     pre = Pre(versions=vers, zstd=zstd, scans=scan_sources(vers))
     pre.folder = answers.folder()
 
-    log.line(log.s.bold("  Apps and data found"))
+    log.line()
+    log.line(log.s.bold("Found on this Mac:"))
     apps = vers.get("apps") or {}
     cli = vers.get("cli") or {}
     in_data = vers.get("in_data") or {}
@@ -265,27 +265,19 @@ def run(log: Log, answers: profile.Answers) -> Pre:
         if sc.files:
             size = (f"{plural(sc.items, sc.item_label)} · " if sc.items else "") + \
                 f"{plural(sc.files, 'files')} · {human(sc.bytes)}"
-        status = "" if sc.found else log.s.dim("not found")
-        log.line(f"  {mark} {label:<16} {ver:<16} {size or status}")
+        status = sc.note or "not found"
+        log.line(f"  {mark} {label:<15} {ver:<14} {size or log.s.dim(status)}")
         if sc.files:
-            log.line(f"      {log.s.dim(sc.where)}")
-        if sc.note:
-            log.line(f"      {log.s.dim(sc.note)}")
+            log.detail(f"      {sc.where}")
     comp = pre.scans["codex"].compressed
-    if comp:
-        if zstd.available:
-            log.line(f"      {log.s.dim(f'Codex sessions are zstd-compressed; plain copies will be added (≈ {human(comp * CODEX_PLAIN_RATIO)}).')}")
-        else:
-            log.warn("Codex sessions are zstd-compressed and no decompressor was found (brew install zstd).")
-
-    log.line()
-    log.line(log.s.bold("  Tools"))
-    log.line(f"  {log.OK if zstd.available else log.WARN} zstd: {zstd.label}")
+    if comp and zstd.available:
+        log.detail(f"      Codex sessions are zstd-compressed; plain copies will be added (≈ {human(comp * CODEX_PLAIN_RATIO)}).")
+    elif comp:
+        log.warn("Codex sessions are zstd-compressed and no decompressor was found (brew install zstd).")
+    log.detail(f"  zstd: {zstd.label}")
 
     check_destination(pre)
     _print_destination(log, pre)
-
-    log.line()
     log.line(f"  {log.DOT} {log.s.dim(ONLINE_NOTE)}")
 
     w = claude_code.retention_warning()
@@ -294,30 +286,25 @@ def run(log: Log, answers: profile.Answers) -> Pre:
     for d in pre.leftovers:
         pre.warnings.append(f"An earlier backup did not finish: {d.name} (it will be renamed to "
                             f"{LEFTOVER_RE.match(d.name).group(1)}-interrupted).")
-    if pre.warnings:
-        log.line()
-        log.line(log.s.bold("  Warnings"))
-        for w in pre.warnings:
-            log.warn(w)
+    for w in pre.warnings:
+        log.warn(w)
     return pre
 
 
 def _print_destination(log: Log, pre: Pre) -> None:
-    log.line()
-    log.line(log.s.bold("  Backup folder"))
+    """The backup folder: one line on the screen (free space), or the reason it cannot be used."""
     if pre.dest_error:
-        log.fail(f"This folder cannot be used: {pre.dest_error}")
+        log.fail(f"The backup folder cannot be used: {pre.dest_error}")
         return
-    log.line(f"  {log.OK} {pre.folder}")
-    how = "same disk as the apps: files are stored as clones (fast, almost no extra space)" if pre.clone_ok \
-        else "files are copied in full (clones need the same APFS disk as the apps)"
-    log.line(f"      {log.s.dim(how)}")
-    mark = log.OK if pre.free > pre.needed * 1.1 + (1 << 30) else log.FAIL
-    log.line(f"  {mark} Free space: {human(pre.free)} · this backup needs about {human(pre.needed)} of new space")
-    if pre.previous_name:
-        log.line(f"  {log.DOT} Previous backup: {pre.previous_name} (used to keep items the apps deleted)")
+    log.detail(f"  Backup folder: {pre.folder}")
+    if pre.clone_ok:
+        log.detail("      same disk as the apps: files are stored as clones (fast, almost no extra space)")
     else:
-        log.line(f"  {log.DOT} No previous backup: this is the first one.")
+        log.note("Files are copied in full, which takes longer (clones need the same APFS disk as the apps).")
+    mark = log.OK if pre.free > pre.needed * 1.1 + (1 << 30) else log.FAIL
+    log.line(f"  {mark} Free space: {human(pre.free)} · this backup needs about {human(pre.needed)}")
+    log.detail(f"  Previous backup: {pre.previous_name} (used to keep items the apps deleted)" if pre.previous_name
+               else "  No previous backup: this is the first one.")
 
 
 # ── questions (interactive mode) ─────────────────────────────────────────────
@@ -331,10 +318,9 @@ def _yes(ans: str, default: bool) -> bool:
 
 def ask(log: Log, pre: Pre, answers: profile.Answers) -> Optional[profile.Answers]:
     """Interactive questions. Returns the final answers, or None if the user cancels."""
-    log.section("Questions")
-    _print_plan(log, pre)
+    log.line()
     while not pre.dest_error:
-        a = log.ask("Make a backup now? [Y/n]  (o = options: another folder, save these answers)", "y", choices="yno")
+        a = log.ask("Make a backup now? [Y/n]  (o = options)", "y", choices="yno")
         if a == "n":
             return None
         if a == "y":
@@ -376,16 +362,6 @@ def ask(log: Log, pre: Pre, answers: profile.Answers) -> Optional[profile.Answer
     if not _yes(log.ask("Make a backup now? [Y/n]", "y", choices="yn"), True):
         return None
     return answers
-
-
-def _print_plan(log: Log, pre: Pre) -> None:
-    log.line(log.s.bold("  The backup will include"))
-    for key, sc in pre.scans.items():
-        what = f"{plural(sc.files, 'files')} ({sc.where})" if key == "claude-desktop" else \
-            f"{plural(sc.items, sc.item_label)}, {plural(sc.files, 'files')}"
-        log.line(f"  {log.OK if sc.found else log.DOT} {sc.name}: " + (what if sc.found else "not found"))
-    log.line(f"  {log.DOT} Into a new folder in: {pre.folder}")
-    log.line()
 
 
 def _zstd_answer(log: Log, pre: Pre, answers: profile.Answers) -> Optional[profile.Answers]:
