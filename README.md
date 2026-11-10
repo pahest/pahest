@@ -28,7 +28,7 @@ pahest
 
 Press **Enter** to start the backup. At the end, hold **Cmd** and click the link it shows to open your chats.
 
-![Pahest in the Terminal](docs/screenshots/pahest-command-line.png)
+<a href="docs/screenshots/pahest-command-line.png"><img src="docs/screenshots/pahest-command-line.png" alt="Pahest in the Terminal" width="720"></a>
 
 *The start screen: your backups folder, the last backups, what was found on the Mac, and one question.*
 
@@ -39,29 +39,26 @@ Press **Enter** to start the backup. At the end, hold **Cmd** and click the link
 
 ## Screenshots
 
-**All sessions.** One list of every session from every app, newest first, with dates to jump to at the right.
+Click a screenshot to see it full size.
 
-![The list of all sessions](docs/screenshots/pahest-view-all-sessions.png)
-
-**One session.** Every message in full. Pictures are small until you click them, and `[Image #5]` in your text opens its picture.
-
-![One session as a web page](docs/screenshots/pahest-single-session.png)
-
-**Pictures.** Every picture from your sessions on one page. Click one to see it large, or open the chat it came from.
-
-![The Pictures page](docs/screenshots/pahest-pictures.png)
-
-**Search.** Type a few words to find sessions by title, folder or the start of the conversation.
-
-![Search in sessions](docs/screenshots/pahest-search-in-sessions.png)
-
-**Filter by folder.** Type a part of a path, or choose from the list. The busiest folders come first.
-
-![The Folder filter](docs/screenshots/pahest-filter-by-folder.png)
-
-**More filters.** By app, by where the session was opened, and by type (your conversations, or subagents and reviews).
-
-<img src="docs/screenshots/pahest-filter-by-app.png" alt="Filter by app" width="32%"> <img src="docs/screenshots/pahest-filter-by-opened-in.png" alt="Filter by where it was opened" width="32%"> <img src="docs/screenshots/pahest-filter-by-type.png" alt="Filter by type" width="32%">
+<table>
+<tr>
+<td width="50%" valign="top"><a href="docs/screenshots/pahest-view-all-sessions.png"><img src="docs/screenshots/pahest-view-all-sessions.png" alt="All sessions"></a><br><b>All sessions.</b> Every session from every app in one list, newest first, with dates to jump to.</td>
+<td width="50%" valign="top"><a href="docs/screenshots/pahest-single-session.png"><img src="docs/screenshots/pahest-single-session.png" alt="One session"></a><br><b>One session.</b> Every message in full. Pictures are small until you click them; <code>[Image #5]</code> opens its picture.</td>
+</tr>
+<tr>
+<td width="50%" valign="top"><a href="docs/screenshots/pahest-pictures.png"><img src="docs/screenshots/pahest-pictures.png" alt="Pictures"></a><br><b>Pictures.</b> Every picture from your sessions on one page. Click one to see it large, or open its chat.</td>
+<td width="50%" valign="top"><a href="docs/screenshots/pahest-search-in-sessions.png"><img src="docs/screenshots/pahest-search-in-sessions.png" alt="Search"></a><br><b>Search.</b> Type a few words to find sessions by title, folder or the start of the conversation.</td>
+</tr>
+<tr>
+<td width="50%" valign="top"><a href="docs/screenshots/pahest-filter-by-folder.png"><img src="docs/screenshots/pahest-filter-by-folder.png" alt="Filter by folder"></a><br><b>Filter by folder.</b> Type a part of a path, or choose from the list. The busiest folders come first.</td>
+<td width="50%" valign="top"><a href="docs/screenshots/pahest-filter-by-app.png"><img src="docs/screenshots/pahest-filter-by-app.png" alt="Filter by app"></a><br><b>Filter by app.</b> Claude Code, Codex or Claude desktop.</td>
+</tr>
+<tr>
+<td width="50%" valign="top"><a href="docs/screenshots/pahest-filter-by-opened-in.png"><img src="docs/screenshots/pahest-filter-by-opened-in.png" alt="Filter by where it was opened"></a><br><b>Filter by where it was opened.</b> Desktop app, Terminal, or Automation (started by another program).</td>
+<td width="50%" valign="top"><a href="docs/screenshots/pahest-filter-by-type.png"><img src="docs/screenshots/pahest-filter-by-type.png" alt="Filter by type"></a><br><b>Filter by type.</b> Your conversations, or subagents and reviews.</td>
+</tr>
+</table>
 
 ## Limits
 
