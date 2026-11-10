@@ -251,15 +251,38 @@ def run_backup(log: Log, pre: precheck.Pre, answers: profile.Answers, stamp: str
     if totals["deleted_at_source"]:
         log.line(f"  {plural(totals['deleted_at_source'], 'files')} that the apps deleted are still kept "
                  "(see deleted-at-source.txt).")
-    log.line(f"  Backup:  {log.s.bold(str(final))}")
-    log.line(f"  Report:  {out['report']}")
-    log.line(f"  All backups: {out['index']}")
+    log.line()
+    log.line(f"  Backup folder:  {log.s.bold(str(final))}")
+    if (final / "index.html").exists():
+        log.line(f"  Your chats:     {(final / 'index.html').as_uri()}")
+    log.line(f"  Report:         {Path(out['report']).as_uri()}")
+    log.line(f"  All backups:    {Path(out['index']).as_uri()}")
+    log.line(log.s.dim("  To open a link, hold Cmd and click it (in Apple's Terminal: hold Cmd and double-click)."))
     log.detach_all()
     if disk_full:
         return EXIT_PROBLEMS
     if interrupted:
         return EXIT_INTERRUPTED
     return EXIT_PROBLEMS if any_problem else EXIT_OK
+
+
+def _print_backups(log: Log, folder: Path, last: int = 3) -> None:
+    """Where the backups are, and the newest ones (date, size, status, folder)."""
+    log.line(f"Backups folder: {log.s.bold(str(folder))}")
+    found = sorted((d for d in folder.iterdir() if d.is_dir() and precheck.STAMP_RE.match(d.name[:19])
+                    and not d.name.endswith("-in-progress")), reverse=True) if folder.is_dir() else []
+    if not found:
+        log.line("Last backups: none yet.")
+        return
+    log.line(f"Last backups ({len(found):,} in all):" if len(found) > last else "Last backups:")
+    for d in found[:last]:
+        try:
+            data = json.loads((d / "backup.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            data = {}
+        size = human((data.get("totals") or {}).get("bytes", 0)) if data.get("totals") else "?"
+        status = data.get("status") or ("interrupted" if d.name.endswith("-interrupted") else "unknown")
+        log.line(f"  {log.DOT} {d.name[:10]} {d.name[11:16].replace('-', ':')}   {size:>8}   {status:<12} {d}")
 
 
 def _system_name() -> str:
@@ -332,13 +355,13 @@ def _main(args: argparse.Namespace) -> int:
         log.line(f"Another pahest run is still working (lock file {home / LOCK_NAME}). Try again later.")
         return EXIT_CANCELLED
     try:
-        log.line(log.s.bold(f"Pahest {__version__}") + log.s.dim(f"  ·  {started:%Y-%m-%d %H:%M:%S}"))
-        log.line(f"Settings and logs: {home}")
+        log.line(log.s.bold(f"Pahest {__version__}") + log.s.dim("  ·  backups of your Claude Code and Codex sessions"))
         try:
             answers = profile.load(args.profile) if not interactive else profile.Answers()
         except profile.ProfileError as e:
             log.fail(str(e))
             return EXIT_CANCELLED
+        _print_backups(log, Path(os.path.expanduser(answers.backups_folder)))
         if not interactive:
             log.line(f"Profile: {args.profile} ({profile.path_for(args.profile)})")
         try:
@@ -359,6 +382,8 @@ def _main(args: argparse.Namespace) -> int:
                                          "Stopped: zstd is missing and the profile says to stop (brew install zstd).")
         except KeyboardInterrupt:
             return _cancelled_record(log, logs_dir, stamp, started, mode, "Cancelled.")
+        log.line()
+        log.line(f"  {log.DOT} The backup starts now. Press Ctrl+C to stop it at any time; what is saved by then is kept.")
         return run_backup(log, pre, answers, stamp, started, mode, args.profile)
     finally:
         try:

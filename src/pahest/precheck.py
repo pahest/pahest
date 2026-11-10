@@ -332,8 +332,16 @@ def _yes(ans: str, default: bool) -> bool:
 def ask(log: Log, pre: Pre, answers: profile.Answers) -> Optional[profile.Answers]:
     """Interactive questions. Returns the final answers, or None if the user cancels."""
     log.section("Questions")
+    _print_plan(log, pre)
+    while not pre.dest_error:
+        a = log.ask("Make a backup now? [Y/n]  (o = options: another folder, save these answers)", "y", choices="yno")
+        if a == "n":
+            return None
+        if a == "y":
+            return _zstd_answer(log, pre, answers)
+        break
 
-    # 1. Backup folder.
+    # Options (or the backup folder cannot be used): 1. the backup folder.
     while True:
         ans = log.ask(f"Backup folder [{short_path(pre.folder)}] (Enter to keep):", "")
         if not ans and pre.dest_error:
@@ -352,23 +360,9 @@ def ask(log: Log, pre: Pre, answers: profile.Answers) -> Optional[profile.Answer
         if not pre.dest_error:
             break
 
-    # 2. zstd.
-    if pre.scans["codex"].compressed and not pre.zstd.available:
-        a = log.ask("Codex sessions are compressed and zstd is missing. [c] continue with compressed files only, "
-                    "[s] stop so you can run  brew install zstd  [c]:", "c", choices="cs")
-        if a == "s":
-            return None
-        answers.without_zstd = "continue"
-
-    # 3. Summary, profile, start.
-    log.line()
-    log.line(log.s.bold("  The backup will include"))
-    for key, sc in pre.scans.items():
-        what = f"{plural(sc.files, 'files')} ({sc.where})" if key == "claude-desktop" else \
-            f"{plural(sc.items, sc.item_label)}, {plural(sc.files, 'files')}"
-        log.line(f"  {log.OK if sc.found else log.DOT} {sc.name}: " + (what if sc.found else "not found"))
-    log.line(f"  {log.DOT} Into: {pre.folder}/<date-time>/")
-
+    # 2. Save the answers, for runs without questions.
+    if _zstd_answer(log, pre, answers) is None:
+        return None
     if _yes(log.ask("Save these answers as a profile for automated runs? [y/N]", "n", choices="yn"), False):
         while True:
             name = log.ask("Profile name [default]:", "default")
@@ -379,6 +373,27 @@ def ask(log: Log, pre: Pre, answers: profile.Answers) -> Optional[profile.Answer
                 break
             except profile.ProfileError as e:
                 log.warn(str(e))
-    if not _yes(log.ask("Start the backup now? [Y/n]", "y", choices="yn"), True):
+    if not _yes(log.ask("Make a backup now? [Y/n]", "y", choices="yn"), True):
         return None
+    return answers
+
+
+def _print_plan(log: Log, pre: Pre) -> None:
+    log.line(log.s.bold("  The backup will include"))
+    for key, sc in pre.scans.items():
+        what = f"{plural(sc.files, 'files')} ({sc.where})" if key == "claude-desktop" else \
+            f"{plural(sc.items, sc.item_label)}, {plural(sc.files, 'files')}"
+        log.line(f"  {log.OK if sc.found else log.DOT} {sc.name}: " + (what if sc.found else "not found"))
+    log.line(f"  {log.DOT} Into a new folder in: {pre.folder}")
+    log.line()
+
+
+def _zstd_answer(log: Log, pre: Pre, answers: profile.Answers) -> Optional[profile.Answers]:
+    """Codex's compressed sessions need zstd to be made readable: go on without it, or stop (None)."""
+    if pre.scans["codex"].compressed and not pre.zstd.available and answers.without_zstd != "continue":
+        a = log.ask("Codex sessions are compressed and zstd is missing. [c] continue with compressed files only, "
+                    "[s] stop so you can run  brew install zstd  [c]:", "c", choices="cs")
+        if a == "s":
+            return None
+        answers.without_zstd = "continue"
     return answers

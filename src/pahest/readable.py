@@ -1902,7 +1902,7 @@ def _guarded(res: Result, what: str, fn: Callable[[], Optional[str]]) -> Optiona
 def run(ctx: Ctx, stamp: str) -> Result:
     t0 = time.time()
     res = Result(ID, "readable", "Readable copies", "chats as Markdown, pictures as files", ROOT,
-                 item_label="indexes")
+                 item_label="lists")
     w = Writer(ctx, res)
     links: List[Tuple[str, str]] = []
     for title, fn in (("Claude Code sessions", claude_code_part), ("Claude desktop local sessions", desktop_local_part),

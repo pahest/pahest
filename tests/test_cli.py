@@ -473,6 +473,22 @@ class ReadOnlyTest(FakeHomeTest):
         self.assertTrue((self.backups()[-1] / "codex/databases/state_5.sqlite").exists())
 
 
+class StartScreenTest(FakeHomeTest):
+    def test_a_run_shows_the_backups_folder_and_the_last_three_backups(self):
+        self.save_profile()
+        root = self.home / "pahest-backups"
+        for day in ("01", "02", "03", "04"):
+            write(root / f"2026-10-{day}-10-00-00" / "backup.json",
+                  json.dumps({"tool": "pahest", "status": "completed", "totals": {"bytes": 3 << 20}}))
+        code, out = self.run_cli("--profile")
+        self.assertIn(code, (0, 1), out)
+        self.assertIn(f"Backups folder: {root}", out)
+        shown = out.split("Last backups (4 in all):")[1].split("──")[0]
+        self.assertIn(f"2026-10-04 10:00     3.0 MB   completed    {root}/2026-10-04-10-00-00", shown)
+        self.assertIn("2026-10-02", shown)
+        self.assertNotIn("2026-10-01", shown)                                  # only the newest three
+
+
 class OtherSystemsTest(FakeHomeTest):
     def test_it_stops_at_once_on_a_system_that_is_not_macos(self):
         before = snapshot(self.home, "")
@@ -601,8 +617,8 @@ class InteractiveTest(FakeHomeTest):
         proc = subprocess.Popen([sys.executable, "-m", "pahest"], stdin=slave, stdout=slave,
                                 stderr=slave, env=env, close_fds=True)
         os.close(slave)
-        answers = [("Backup folder", "\n"),
-                   ("Save these answers", "y\n"), ("Profile name", "\n"), ("Start the backup now", "y\n")]
+        answers = [("Make a backup now", "o\n"), ("Backup folder", "\n"),             # o: the options
+                   ("Save these answers", "y\n"), ("Profile name", "\n"), ("Make a backup now", "y\n")]
         buf = b""
         deadline = time.time() + 120
         while time.time() < deadline:
@@ -628,5 +644,10 @@ class InteractiveTest(FakeHomeTest):
         self.assertEqual(saved.backups_folder, "~/pahest-backups")
         [b] = self.backups()
         log = (b / "backup.log").read_text()
-        self.assertIn("? Start the backup now? [Y/n] y", log)
+        self.assertIn("? Make a backup now? [Y/n] y", log)
         self.assertIn("── Questions", log)
+        self.assertIn("Last backups: none yet.", text)
+        self.assertIn("Press Ctrl+C to stop it at any time", text)
+        self.assertIn(f"Backup folder:  {b}", text)                              # where it is, and links to open
+        self.assertIn((b / "report.html").as_uri(), text)
+        self.assertIn("hold Cmd and click", text)
