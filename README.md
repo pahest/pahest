@@ -17,43 +17,51 @@ Good to know:
 - It needs no app and no account to read the backup: it is ordinary files.
 - Free and open source (MIT license). Not made by, or connected to, Anthropic or OpenAI.
 
-## Screenshots
-
-<!-- Put the image files in docs/screenshots/ and replace each line below with ![…](docs/screenshots/NAME.png) -->
-
-- *Screenshot: the list of all sessions (`index.html`)*
-- *Screenshot: one session as a web page*
-- *Screenshot: the Pictures page*
-- *Screenshot: a run in the Terminal*
-
 ## Install and run
 
-You need a Mac. Open the **Terminal** app and paste these two lines (this needs [Homebrew](https://brew.sh)):
+You need a Mac with [Homebrew](https://brew.sh). Open the **Terminal** app and paste:
 
 ```sh
 brew install pahest/pahest/pahest
 pahest
 ```
 
-Without Homebrew:
+Press **Enter** to start the backup. At the end, hold **Cmd** and click the link it shows to open your chats.
 
-```sh
-git clone https://github.com/pahest/pahest.git
-cd pahest
-./pahest
-```
+![Pahest in the Terminal](docs/screenshots/pahest-command-line.png)
 
-If macOS offers to install the “command line developer tools”, click **Install**, wait, and paste the lines again.
+*The start screen: your backups folder, the last backups, what was found on the Mac, and one question.*
 
-Pahest shows where your backups are and the last three of them, then asks:
+- **Stop:** press **Ctrl+C** at any time. What is saved by then is kept.
+- **Next backup:** run `pahest` again. Every run makes a new, complete backup.
+- **Update:** `brew upgrade pahest`.
+- **Without Homebrew:** `git clone https://github.com/pahest/pahest.git`, then `cd pahest` and `./pahest`.
 
-```
-? Make a backup now? [Y/n]
-```
+## Screenshots
 
-Press **Enter** to start. Press **Ctrl+C** to stop at any time. At the end it shows the backup folder and links to your chats and to the report. Hold **Cmd** and click a link to open it.
+**All sessions.** One list of every session from every app, newest first, with dates to jump to at the right.
 
-To make another backup later, run `pahest` again. Every run makes a new, complete backup.
+![The list of all sessions](docs/screenshots/pahest-view-all-sessions.png)
+
+**One session.** Every message in full. Pictures are small until you click them, and `[Image #5]` in your text opens its picture.
+
+![One session as a web page](docs/screenshots/pahest-single-session.png)
+
+**Pictures.** Every picture from your sessions on one page. Click one to see it large, or open the chat it came from.
+
+![The Pictures page](docs/screenshots/pahest-pictures.png)
+
+**Search.** Type a few words to find sessions by title, folder or the start of the conversation.
+
+![Search in sessions](docs/screenshots/pahest-search-in-sessions.png)
+
+**Filter by folder.** Type a part of a path, or choose from the list. The busiest folders come first.
+
+![The Folder filter](docs/screenshots/pahest-filter-by-folder.png)
+
+**More filters.** By app, by where the session was opened, and by type (your conversations, or subagents and reviews).
+
+<img src="docs/screenshots/pahest-filter-by-app.png" alt="Filter by app" width="32%"> <img src="docs/screenshots/pahest-filter-by-opened-in.png" alt="Filter by where it was opened" width="32%"> <img src="docs/screenshots/pahest-filter-by-type.png" alt="Filter by type" width="32%">
 
 ## Limits
 
