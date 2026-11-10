@@ -497,7 +497,7 @@ class RegenerateTest(FakeHomeTest):
         code, out = self.run_cli("--regenerate", str(b))
         self.assertEqual(code, 0, out)
         self.assertIn("with revdoku-backup 0.1.0", out)
-        self.assertIn("Made with <a href='https://github.com/emirn/pahest'", (b / "report.html").read_text())
+        self.assertIn('Made with <a href="https://github.com/emirn/pahest"', (b / "report.html").read_text())
         self.assert_checksums_match(b)
 
     def test_pages_are_rebuilt_in_place_and_nothing_else_changes(self):
@@ -522,7 +522,7 @@ class RegenerateTest(FakeHomeTest):
         self.assertEqual(guard.violations, [])
         data = json.loads((b / "backup.json").read_text())
         self.assertEqual(len(data["regenerated"]), 1)
-        self.assertIn("Pages rebuilt", (b / "report.html").read_text())
+        self.assertIn("Pages last rebuilt", (b / "report.html").read_text())
         self.assertIn("Rebuild the pages", (b / "backup.log").read_text())
         code, out = self.run_cli("--regenerate")                              # default: the newest backup
         self.assertEqual(code, 0, out)

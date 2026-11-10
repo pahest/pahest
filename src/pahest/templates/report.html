@@ -1,0 +1,98 @@
+{{> report_head.html}}
+<h1>AI backup {{name}} {{> badge.html}}</h1>
+<div class="sub">Started {{started}} · took {{took}} · {{how}}</div>
+<p>Backup folder: <a href="./"><code>{{backup_folder}}</code></a></p>
+{{#regenerated}}
+<p class="sub">Pages last rebuilt {{at}} with {{tool}} {{version}} ({{pages}} files{{#problems}}, {{problems}} problems{{/problems}}); rebuilt {{rebuilds}} times in all.</p>
+{{/regenerated}}
+
+<div class="grid">
+{{#stats}}<div class="stat"><b>{{value}}</b><span>{{label}}</span></div>
+{{/stats}}
+</div>
+
+<h2>What was backed up</h2>
+<div class="card scroll"><table>
+<tr><th>Source</th><th>Part</th><th>Status</th><th class="num">Items</th><th class="num">Files</th><th class="num">Size</th><th>Since previous backup</th><th>Folder</th></tr>
+{{#results}}
+<tr><td>{{name}}</td><td>{{part}}</td><td>{{> badge.html}}</td><td class="num">{{items}}</td><td class="num">{{files}}</td><td class="num">{{size}}</td><td>{{since}}</td><td><a href="{{folder}}/"><code>{{folder}}/</code></a></td></tr>
+{{/results}}
+</table></div>
+
+{{#problems}}
+<h2>Problems ({{count}})</h2>
+<div class="card">{{> list_items.html}}</div>
+{{/problems}}
+
+<h2>Verification</h2>
+<div class="card">
+{{#verification}}
+<p>{{> badge.html}} {{files}} files ({{size}}) were read back from the backup and matched their SHA-256 checksums.
+Checked: {{json_ok}} JSON files, {{jsonl_ok}} JSONL files (every line), {{zst_ok}} compressed files (decompressed and
+compared with the plain copy), {{sqlite_ok}} databases (integrity check), {{images_ok}} images. Took {{took}}.</p>
+{{#warnings}}<details><summary>{{count}} warnings</summary>{{> list_items.html}}</details>{{/warnings}}
+<p class="sub">Check it again any time: <code>cd "{{backup_folder}}" &amp;&amp; shasum -a 256 -c checksums.sha256</code></p>
+{{/verification}}
+{{^verification}}<p>Verification did not run.</p>{{/verification}}
+</div>
+
+<h2>Details</h2>
+{{#results}}
+<div class="card">
+<h3>{{name}} — {{part}} {{> badge.html}}</h3>
+<ul>
+<li>Folder: <a href="{{folder}}/"><code>{{folder}}/</code></a> ({{files}} files, {{size}}, {{took}})</li>
+{{#sources}}<li>Source: <code>{{.}}</code></li>
+{{/sources}}
+{{#counts}}<li>{{label}}: {{value}}</li>
+{{/counts}}
+{{#compared_to}}<li>Compared with the backup of {{compared_to}}: {{new}} new files, {{changed}} changed, {{carried}} files kept that the source no longer has</li>{{/compared_to}}
+</ul>
+{{#failed}}<p><b>Problems</b></p>{{> list_items.html}}{{/failed}}
+{{#notes}}<p><b>Notes</b></p>{{> list_items.html}}{{/notes}}
+{{#unavailable}}<details><summary>{{count}} items the server no longer had</summary>{{> list_items.html}}</details>{{/unavailable}}
+{{#info}}<details><summary>About these files</summary>{{> list_items.html}}</details>{{/info}}
+</div>
+{{/results}}
+
+<h2>App versions</h2>
+<div class="card scroll"><table>
+<tr><th>What</th><th>Version</th><th>Where</th></tr>
+{{#versions}}<tr><td>{{name}}</td><td>{{version}}</td><td>{{#path}}<code>{{path}}</code>{{/path}}{{where}}</td></tr>
+{{/versions}}
+</table></div>
+
+<h2>Prechecks</h2>
+<div class="card"><ul>
+<li>Clones: {{clones}} · free space before: {{free}}</li>
+{{#previous}}<li>Previous backup: {{previous}}</li>{{/previous}}
+{{#precheck_warnings}}<li>{{.}}</li>
+{{/precheck_warnings}}
+</ul></div>
+
+{{#read_only}}
+<h2>Read-only check</h2>
+<div class="card"><ul>
+{{#refused_count}}
+<li>{{> badge.html}} The guard refused {{refused_count}} attempts to change files or send something other than a read request. Nothing was changed, but this is a bug: please report it.</li>
+{{#refused}}<li><code>{{.}}</code></li>
+{{/refused}}
+{{/refused_count}}
+{{^refused_count}}
+<li>{{> badge.html}} The apps' data was only read, and nothing was sent over the network. Files were written only in: {{#wrote_only_in}}<code>{{path}}</code>{{^last}}, {{/last}}{{/wrote_only_in}}</li>
+{{/refused_count}}
+</ul></div>
+{{/read_only}}
+
+<h2>Files in this backup folder</h2>
+<div class="card"><ul>
+<li><a href="index.html">index.html</a> — start here: all your chats as web pages, with search</li>
+<li><a href="README.md">README.md</a> — what each folder holds</li>
+<li><a href="readable/">readable/</a> — every local session as Markdown and as a web page, pictures as files</li>
+<li><a href="backup.log">backup.log</a> — everything shown in the terminal during the run</li>
+<li><a href="app-versions.json">app-versions.json</a> — versions of the apps whose data was read</li>
+<li><a href="checksums.sha256">checksums.sha256</a> — SHA-256 of every file</li>
+<li><a href="backup.json">backup.json</a> — this report as data</li>
+{{#deleted_at_source}}<li><a href="deleted-at-source.txt">deleted-at-source.txt</a> — files the apps deleted that this backup still keeps, with the date each one went missing</li>{{/deleted_at_source}}
+</ul></div>
+{{> report_foot.html}}

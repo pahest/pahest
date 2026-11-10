@@ -1,0 +1,11 @@
+{{> report_head.html}}
+<h1>AI backups</h1>
+<div class="sub">{{count}} runs, newest first. Every run is a full backup in its own folder.</div>
+<h2>Runs</h2>
+<div class="card scroll"><table>
+<tr><th>Backup</th><th>Status</th><th>Mode</th><th class="num">Took</th><th class="num">Files</th><th class="num">Size</th><th class="num">Problems</th><th>Folder</th><th>Log</th></tr>
+{{#runs}}
+<tr><td><a href="{{name}}.html">{{name}}</a></td><td>{{> badge.html}}</td><td>{{mode}}</td><td class="num">{{took}}</td><td class="num">{{files}}</td><td class="num">{{size}}</td><td class="num">{{problems}}</td><td>{{#folder}}<a href="{{folder_href}}/"><code>{{folder}}</code></a>{{/folder}}{{^folder}}—{{/folder}}</td><td>{{#log}}<a href="{{name}}.log">log</a>{{/log}}</td></tr>
+{{/runs}}
+</table></div>
+{{> report_foot.html}}

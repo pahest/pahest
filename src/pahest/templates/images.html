@@ -1,0 +1,12 @@
+<h1>Pictures</h1>
+<p class="sub">{{subtitle}}. Click a picture to see it bigger; “View in chat” opens the session at that picture.</p>
+<div class="filters" id="filters">
+<span class="pks" id="pks">
+{{#kinds}}<label title="{{count}} in all"><input type="checkbox" data-pk="{{key}}"> {{label}} <span class="n"></span></label>
+{{/kinds}}
+</span>
+{{> filters.html}}
+</div>
+<div class="cols"><div id="list"></div><aside class="dates" id="dates" aria-label="Dates"></aside></div>
+<noscript><p>This page needs JavaScript. The pictures are image files in <code>readable/codex/images/</code>
+and <code>readable/claude-code/&lt;project&gt;/images/</code>.</p></noscript>

@@ -628,7 +628,7 @@ class WebPagesTest(ReadableCase):
         self.assertIn('<a href="readable/images.html">Pictures (1)</a>', index)    # the same picture in two sessions: once
         gallery = (b / "readable/images.html").read_text()
         self.assertIn('data-page="images"', gallery)
-        self.assertIn('<script src="images.js"></script><script src="assets/app.js">', gallery)
+        self.assertIn('<script src="images.js"></script>\n<script src="assets/app.js">', gallery)
         self.assertIn('data-pk="you"', gallery)
         pics = self.js_data("readable/images.js", "PICS")
         [(file, kind, when, item)] = pics                                       # shown 3 times, listed once …

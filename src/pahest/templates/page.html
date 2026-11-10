@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{title}}</title>
+<link rel="stylesheet" href="{{style_href}}">
+</head>
+<body{{#attrs}} data-{{name}}="{{value}}"{{/attrs}}>
+<nav class="top">
+<a class="brand" href="{{index_href}}" title="{{tool}}: your AI chats, backed up">{{tool}}</a>
+<span class="sep">·</span>
+<a href="{{index_href}}">All chats</a>
+{{#crumbs}}<span class="sep">›</span>{{#href}}<a href="{{href}}">{{label}}</a>{{/href}}{{^href}}<span>{{label}}</span>{{/href}}
+{{/crumbs}}
+{{#actions}}<span class="acts">{{{actions}}}</span>{{/actions}}
+{{#keys}}<span class="keys">{{{keys}}}</span>{{/keys}}
+</nav>
+<main>{{{body}}}</main>
+<footer id="foot">
+<span id="about"></span>
+{{#footer}}<a href="{{href}}">{{label}}</a>{{^last}} · {{/last}}{{/footer}}<span id="links"></span>
+<div class="made">{{> made_with.html}}</div>
+</footer>
+{{#scripts}}<script src="{{.}}"></script>
+{{/scripts}}
+</body>
+</html>

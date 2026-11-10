@@ -207,6 +207,14 @@ python3 -m unittest discover -s tests -t tests      # no network, uses a fake ho
 
 The tests never touch your real data or the internet.
 
+The look of the pages and reports is in `src/pahest/templates/`, not in the Python code:
+
+- `page.html`, `list.html`, `images.html`, `session.html`: the web pages.
+- `report.html`, `logs.html`: the backup report and the list of runs.
+- `style.css`, `report.css`, `app.js`: the style sheets and the pages' script.
+
+They use a small subset of [Mustache](https://mustache.github.io): `{{name}}` (escaped), `{{{name}}}` (as it is), `{{#name}}…{{/name}}` (lists and conditions), `{{^name}}…{{/name}}` and `{{> file}}`. `src/pahest/template.py` describes it in full. Only the text of the conversations themselves (Markdown to HTML) is built in code. After changing a template, run `pahest --regenerate` to see it on an existing backup.
+
 ## License
 
 MIT. See [LICENSE](LICENSE). Claude is a trademark of Anthropic. ChatGPT and Codex are trademarks of OpenAI.

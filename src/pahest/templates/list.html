@@ -1,0 +1,11 @@
+<h1>{{title}}</h1>
+<p class="sub">{{subtitle}}{{#more}} · <a href="{{href}}">{{label}}</a>{{/more}}</p>
+<div class="filters" id="filters">
+{{> filters.html}}
+<button type="button" class="alldet" id="alldet">Show all details</button>
+</div>
+<div class="cols"><div id="list"></div><aside class="dates" id="dates" aria-label="Dates"></aside></div>
+<noscript><ul class="items">
+{{#recent}}<li><div class="r1"><a href="{{href}}">{{title}}</a><span class="when">{{when}}</span></div></li>
+{{/recent}}
+</ul></noscript>

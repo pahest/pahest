@@ -2029,8 +2029,8 @@ def _web(w: Writer, stamp: str, res: Result) -> None:
         ("Codex databases", "readable/codex/databases/index.md")) if md in pages]
     about = f"Backup of {htmlview._shown_stamp(stamp)}"
     w.text(htmlview.ITEMS_JS, htmlview.items_js(items, footer_links, about))
-    w.text(f"{htmlview.ASSETS}/style.css", htmlview.CSS)
-    w.text(f"{htmlview.ASSETS}/app.js", htmlview.APP_JS)
+    w.text(f"{htmlview.ASSETS}/style.css", htmlview.style_css())
+    w.text(f"{htmlview.ASSETS}/app.js", htmlview.app_js())
 
     made = 0
     for md_rel in mds:
