@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.venv/
+.DS_Store
+
+# Claude Code local files (never publish)
+.claude/*.lock
+.claude/settings.local.json
