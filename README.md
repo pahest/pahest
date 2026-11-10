@@ -4,8 +4,17 @@
 
 Pahest makes a backup of your **Claude Code** and **Codex** sessions on a Mac, and turns it into web pages you can read and search offline. If an app deletes old sessions, or you lose an account, your history is still on your disk.
 
+What it does:
+
+- **Copies the files as they are.** Every run makes an exact copy of the files the apps keep on your Mac, in a new folder in `~/pahest-backups`. Nothing in them is changed or shortened.
+- **Adds reports you can read.** Next to the copies it makes web pages, so a person can review the backup without the apps: a list of all sessions with search and filters, and one page per session with every message.
+- **Shows all pictures in one place.** A separate Pictures page shows every image from your sessions; a click opens it large, or opens the session it came from.
+- **Checks itself.** After each run it reads every file back, and writes a report of what was saved and any problems.
+
+What it does not do:
+
 - It only reads the apps' files. It never changes them and never connects to the internet.
-- The backup is ordinary files in `~/pahest-backups`. You need no app and no account to read it.
+- It needs no app and no account to read the backup: it is ordinary files.
 - Free and open source (MIT license). Not made by, or connected to, Anthropic or OpenAI.
 
 ## Screenshots
