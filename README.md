@@ -11,7 +11,7 @@ What it does:
 - **Shows all pictures in one place.** A separate Pictures page shows every image from your sessions; a click opens it large, or opens the session it came from.
 - **Checks itself.** After each run it reads every file back, and writes a report of what was saved and any problems.
 
-What it does not do:
+Good to know:
 
 - It only reads the apps' files. It never changes them and never connects to the internet.
 - It needs no app and no account to read the backup: it is ordinary files.
