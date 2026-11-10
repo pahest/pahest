@@ -369,7 +369,7 @@ class LocalOnlyCliTest(FakeHomeTest):
                 mock.patch.object(subprocess, "run", side_effect=AssertionError("a program was run")):
             code, out = self.run_cli("--profile")
         self.assertEqual(code, 0, out)
-        self.assertIn("Not included: chats on claude.ai and chatgpt.com", out)
+        self.assertIn("Web chats (claude.ai, chatgpt.com) are not backed up", out)
         self.assertNotIn("Keychain", out)
         data = json.loads((self.backups()[-1] / "backup.json").read_text())
         self.assertEqual({r["id"] for r in data["results"]},
@@ -488,6 +488,22 @@ class StartScreenTest(FakeHomeTest):
         self.assertIn(f"2026-10-04 10:00     3.0 MB   completed    {root}/2026-10-04-10-00-00", shown)
         self.assertIn("2026-10-02", shown)
         self.assertNotIn("2026-10-01", shown)                                  # only the newest three
+
+
+class RebuildChoiceTest(FakeHomeTest):
+    def test_the_options_offer_to_rebuild_the_pages_of_the_last_backup(self):
+        from unittest import mock
+        from pahest import precheck
+        from pahest.log import Log
+        self.save_profile()
+        code, _ = self.run_cli("--profile")
+        self.assertEqual(code, 0)
+        out = io.StringIO()
+        log = Log(out)
+        pre = precheck.run(log, profile.Answers())
+        with mock.patch("builtins.input", side_effect=["o", "r"]):
+            self.assertEqual(precheck.ask(log, pre, profile.Answers()), precheck.REBUILD)
+        self.assertIn(f"Rebuild the web pages and reports of the last backup ({self.backups()[-1].name})", out.getvalue())
 
 
 class TemplatesOptionTest(FakeHomeTest):
@@ -626,8 +642,9 @@ class InteractiveTest(FakeHomeTest):
         proc = subprocess.Popen([sys.executable, "-m", "pahest"], stdin=slave, stdout=slave,
                                 stderr=slave, env=env, close_fds=True)
         os.close(slave)
-        answers = [("Make a backup now", "o\n"), ("Backup folder", "\n"),             # o: the options
-                   ("Save these answers", "y\n"), ("Profile name", "\n"), ("Make a backup now", "y\n")]
+        answers = [("Make a backup now", "o\n"), ("Your choice", "f\n"), ("Backup folder", "\n"),     # o: the options
+                   ("Make a backup now", "o\n"), ("Your choice", "s\n"), ("Profile name", "\n"),
+                   ("Make a backup now", "y\n")]
         buf = b""
         deadline = time.time() + 120
         while time.time() < deadline:
@@ -653,7 +670,7 @@ class InteractiveTest(FakeHomeTest):
         self.assertEqual(saved.backups_folder, "~/pahest-backups")
         [b] = self.backups()
         log = (b / "backup.log").read_text()
-        self.assertIn("? Make a backup now? [Y/n] y", log)
+        self.assertIn("? Make a backup now? [Y/n]  (o = options) y", log)
         self.assertIn("Last backups: none yet.", text)
         self.assertIn("Press Ctrl+C to stop it at any time", text)
         self.assertIn(f"Backup folder:  {b}", text)                              # where it is, and links to open

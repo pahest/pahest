@@ -22,7 +22,8 @@ from .store import TMP_MARK, Previous, Zstd, can_clone, load_previous
 STAMP_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}$")
 LEFTOVER_RE = re.compile(r"^(\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2})-in-progress$")
 PART_IDS = [claude_code.ID, codex.ID, claude_desktop.LOCAL_ID, "readable"]
-ONLINE_NOTE = "Not included: chats on claude.ai and chatgpt.com (not on this Mac). Use each app's “Export data”."
+ONLINE_NOTE = "Web chats (claude.ai, chatgpt.com) are not backed up. Use “Export data” on those sites."
+REBUILD = "rebuild"       # an answer of ask()
 CODEX_PLAIN_RATIO = 3.0   # measured: plain sessions are ~2.9x their .zst size
 READABLE_RATIO = 0.15     # measured: Markdown + pictures + web pages are ~15% of the transcripts
 
@@ -316,25 +317,52 @@ def _yes(ans: str, default: bool) -> bool:
     return a.startswith("y")
 
 
-def ask(log: Log, pre: Pre, answers: profile.Answers) -> Optional[profile.Answers]:
-    """Interactive questions. Returns the final answers, or None if the user cancels."""
+def newest_backup(folder: Path) -> Optional[Path]:
+    """The newest finished backup in a backups folder."""
+    if not folder.is_dir():
+        return None
+    found = sorted((d for d in folder.iterdir() if d.is_dir() and STAMP_RE.match(d.name)), reverse=True)
+    return found[0] if found else None
+
+
+def ask(log: Log, pre: Pre, answers: profile.Answers):
+    """Interactive questions. Returns the final answers, REBUILD (rebuild the pages of the last backup instead
+    of making a new one), or None if the user cancels."""
     log.line()
-    while not pre.dest_error:
+    while True:
+        if pre.dest_error:
+            _ask_folder(log, pre, answers)
         a = log.ask("Make a backup now? [Y/n]  (o = options)", "y", choices="yno")
         if a == "n":
             return None
         if a == "y":
             return _zstd_answer(log, pre, answers)
-        break
+        last = newest_backup(pre.folder)
+        log.line("  Options:")
+        if last:
+            log.line(f"    r  Rebuild the web pages and reports of the last backup ({last.name}). No new backup is made.")
+        log.line("    f  Choose another backups folder.")
+        log.line("    s  Save these answers, for runs without questions (pahest --profile).")
+        choice = log.ask("Your choice (Enter = go back):", "", choices="rfs" if last else "fs")
+        if choice == "r":
+            return REBUILD
+        if choice == "f":
+            _ask_folder(log, pre, answers)
+        elif choice == "s":
+            if _zstd_answer(log, pre, answers) is None:
+                return None
+            _save_profile(log, answers)
 
-    # Options (or the backup folder cannot be used): 1. the backup folder.
+
+def _ask_folder(log: Log, pre: Pre, answers: profile.Answers) -> None:
+    """Choose the backups folder; asks again until the folder can be used."""
     while True:
         ans = log.ask(f"Backup folder [{short_path(pre.folder)}] (Enter to keep):", "")
         if not ans and pre.dest_error:
             log.warn("That folder cannot be used. Type another full path, or press Ctrl-C to stop.")
             continue
         if not ans:
-            break
+            return
         p = Path(os.path.expanduser(ans))
         if not p.is_absolute():
             log.warn("Please give a full path, for example ~/pahest-backups or /Volumes/Backup/pahest-backups.")
@@ -344,24 +372,19 @@ def ask(log: Log, pre: Pre, answers: profile.Answers) -> Optional[profile.Answer
         check_destination(pre)
         _print_destination(log, pre)
         if not pre.dest_error:
-            break
+            return
 
-    # 2. Save the answers, for runs without questions.
-    if _zstd_answer(log, pre, answers) is None:
-        return None
-    if _yes(log.ask("Save these answers as a profile for automated runs? [y/N]", "n", choices="yn"), False):
-        while True:
-            name = log.ask("Profile name [default]:", "default")
-            try:
-                p = profile.save(name, answers)
-                log.ok(f"Saved {p}")
-                log.line(f"      {log.s.dim('Run it later with:  pahest --profile' + ('' if name == 'default' else ' ' + name))}")
-                break
-            except profile.ProfileError as e:
-                log.warn(str(e))
-    if not _yes(log.ask("Make a backup now? [Y/n]", "y", choices="yn"), True):
-        return None
-    return answers
+
+def _save_profile(log: Log, answers: profile.Answers) -> None:
+    while True:
+        name = log.ask("Profile name [default]:", "default")
+        try:
+            p = profile.save(name, answers)
+            log.ok(f"Saved {p}")
+            log.line(f"      {log.s.dim('Run it later with:  pahest --profile' + ('' if name == 'default' else ' ' + name))}")
+            return
+        except profile.ProfileError as e:
+            log.warn(str(e))
 
 
 def _zstd_answer(log: Log, pre: Pre, answers: profile.Answers) -> Optional[profile.Answers]:

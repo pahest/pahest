@@ -36,13 +36,6 @@ def is_page(rel: str) -> bool:
     return rel in TOP_PAGES or rel == readable.ROOT or rel.startswith(readable.ROOT + "/")
 
 
-def newest_backup(folder: Path) -> Optional[Path]:
-    if not folder.is_dir():
-        return None
-    found = sorted((d for d in folder.iterdir() if d.is_dir() and precheck.STAMP_RE.match(d.name)), reverse=True)
-    return found[0] if found else None
-
-
 def check_folder(folder: Path) -> str:
     """Why this folder cannot be regenerated, or ""."""
     if not folder.is_dir():
@@ -120,17 +113,18 @@ def _build_and_check(ctx: Ctx, stamp: str, store: Store, log: Log) -> Tuple[Resu
     return res, pages, problems
 
 
-def run(target: Optional[str], log: Log) -> int:
+def run(target: Optional[str], log: Log, banner: bool = True) -> int:
     """Rebuild the pages of the backup in `target` (default: the newest in ~/pahest-backups)."""
     started = time.time()
-    log.line(log.s.bold(f"Pahest {__version__}") + log.s.dim(f"  ·  {SLOGAN}  ·  {HOME_URL}"))
+    if banner:
+        log.line(log.s.bold(f"Pahest {__version__}") + log.s.dim(f"  ·  {SLOGAN}  ·  {HOME_URL}"))
     log.line("Rebuilding the pages of a backup.")
     if target:
         folder = Path(os.path.expanduser(target)).resolve()
         if folder.is_file():              # e.g. its index.html
             folder = folder.parent
     else:
-        folder = newest_backup(paths.settings_home())
+        folder = precheck.newest_backup(paths.settings_home())
         if folder is None:
             log.fail(f"No backup found in {paths.settings_home()}. Give the backup folder: "
                      "pahest --regenerate FOLDER")

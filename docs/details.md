@@ -136,6 +136,8 @@ Only bookkeeping stays in the raw transcript alone: ids, time stamps, token coun
 
 A newer version of pahest can make better pages. To redo them for a backup you already have, without backing up again:
 
+In a normal run you can do the same without a new backup: at the question press `o` (options), then `r`.
+
 ```
 pahest --regenerate                                       # the newest backup
 pahest --regenerate ~/pahest-backups/2026-11-09-17-29-11  # that backup

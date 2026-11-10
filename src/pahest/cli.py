@@ -377,6 +377,9 @@ def _main(args: argparse.Namespace) -> int:
                 answers = precheck.ask(log, pre, answers)
                 if answers is None:
                     return _cancelled_record(log, logs_dir, stamp, started, mode, "Cancelled.")
+                if answers == precheck.REBUILD:
+                    log.line()
+                    return regenerate.run(str(precheck.newest_backup(pre.folder)), log, banner=False)
             elif pre.dest_error:
                 return _cancelled_record(log, logs_dir, stamp, started, mode,
                                          f"Stopped: the backup folder cannot be used: {pre.dest_error}.")
