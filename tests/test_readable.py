@@ -617,12 +617,12 @@ class WebPagesTest(ReadableCase):
             self.assertIn(text, app_js)
         # "Show": choose what a session page shows
         for p in (index, page, (b / "readable/images.html").read_text()):          # the name, the address, the license
-            self.assertIn('<a class="brand" href="https://github.com/emirn/pahest"', p)
+            self.assertIn('<a class="brand" href="https://github.com/pahest/pahest"', p)
             self.assertIn('data-set="theme"', p)                               # the View menu: colours and font
-            self.assertNotRegex(p, r'(src|href)="(https?:)?//(?!github\.com/emirn/pahest")')    # nothing is loaded from the internet
-            self.assertIn('Made with <a href="https://github.com/emirn/pahest" rel="noopener">Pahest</a> 0.1.0, open source '
+            self.assertNotRegex(p, r'(src|href)="(https?:)?//(?!github\.com/pahest/pahest")')    # nothing is loaded from the internet
+            self.assertIn('Made with <a href="https://github.com/pahest/pahest" rel="noopener">Pahest</a> 0.1.0, open source '
                           '(MIT license). Pahest is Armenian for “reserve”.', p)
-        self.assertIn("Made by [Pahest](https://github.com/emirn/pahest) 0.1.0", (b / "README.md").read_text())
+        self.assertIn("Made by [Pahest](https://github.com/pahest/pahest) 0.1.0", (b / "README.md").read_text())
         self.assertIn('<details class="showm" id="showm">', page)
         self.assertEqual(re.findall(r'data-show="(\w+)"', page), ["you", "say", "think", "tool", "app", "pics"])
         self.assertIn('data-preset="you">Only my messages', page)

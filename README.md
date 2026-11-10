@@ -19,10 +19,17 @@ Pahest makes a backup of your **Claude Code** and **Codex** sessions on a Mac, a
 
 ## Install and run
 
-You need a Mac. Open the **Terminal** app and paste these three lines:
+You need a Mac. Open the **Terminal** app and paste these two lines (this needs [Homebrew](https://brew.sh)):
 
 ```sh
-git clone https://github.com/emirn/pahest.git
+brew install pahest/pahest/pahest
+pahest
+```
+
+Without Homebrew:
+
+```sh
+git clone https://github.com/pahest/pahest.git
 cd pahest
 ./pahest
 ```
@@ -37,7 +44,7 @@ Pahest shows where your backups are and the last three of them, then asks:
 
 Press **Enter** to start. Press **Ctrl+C** to stop at any time. At the end it shows the backup folder and links to your chats and to the report. Hold **Cmd** and click a link to open it.
 
-To make another backup later, run `./pahest` in that folder again. Every run makes a new, complete backup.
+To make another backup later, run `pahest` again. Every run makes a new, complete backup.
 
 ## Limits
 
