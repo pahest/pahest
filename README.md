@@ -1,6 +1,6 @@
 # Pahest
 
-*Pahest* (պահեստ) is Armenian for “reserve”.
+*Pahest* is the Armenian word **պահեստ** (say “pa-HEST”). It means “reserve”.
 
 Pahest makes a backup of your **Claude Code** and **Codex** sessions on a Mac, and turns it into web pages you can read and search offline. If an app deletes old sessions, or you lose an account, your history is still on your disk.
 
