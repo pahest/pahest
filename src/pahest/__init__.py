@@ -1,6 +1,6 @@
 """Pahest (Armenian for "reserve"): full local backups of AI chat apps."""
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 NAME = "Pahest"
 SLOGAN = "local backup for AI apps"
 HOME_URL = "https://github.com/pahest/pahest"

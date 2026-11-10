@@ -6,7 +6,7 @@ import sqlite3
 
 from helpers import TempDirTest, quiet_log
 
-from pahest import readable
+from pahest import __version__, readable
 from pahest.result import Ctx
 from pahest.store import Store, Zstd
 
@@ -620,9 +620,9 @@ class WebPagesTest(ReadableCase):
             self.assertIn('<a class="brand" href="https://github.com/pahest/pahest"', p)
             self.assertIn('data-set="theme"', p)                               # the View menu: colours and font
             self.assertNotRegex(p, r'(src|href)="(https?:)?//(?!github\.com/pahest/pahest")')    # nothing is loaded from the internet
-            self.assertIn('Made with <a href="https://github.com/pahest/pahest" rel="noopener">Pahest</a> 0.1.0, open source '
+            self.assertIn('Made with <a href="https://github.com/pahest/pahest" rel="noopener">Pahest</a> ' + __version__ + ', open source '
                           '(MIT license). Pahest is Armenian for “reserve”.', p)
-        self.assertIn("Made by [Pahest](https://github.com/pahest/pahest) 0.1.0", (b / "README.md").read_text())
+        self.assertIn(f"Made by [Pahest](https://github.com/pahest/pahest) {__version__}", (b / "README.md").read_text())
         self.assertIn('<details class="showm" id="showm">', page)
         self.assertEqual(re.findall(r'data-show="(\w+)"', page), ["you", "say", "think", "tool", "app", "pics"])
         self.assertIn('data-preset="you">Only my messages', page)

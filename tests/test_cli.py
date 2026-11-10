@@ -559,7 +559,7 @@ class RegenerateTest(FakeHomeTest):
         (b / "backup.json").write_text(json.dumps(data))
         code, out = self.run_cli("--regenerate", str(b))
         self.assertEqual(code, 0, out)
-        self.assertIn("with revdoku-backup 0.1.0", out)
+        self.assertIn("with revdoku-backup " + data["versions"]["revdoku_backup"], out)
         self.assertIn('Made with <a href="https://github.com/pahest/pahest"', (b / "report.html").read_text())
         self.assert_checksums_match(b)
 
