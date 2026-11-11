@@ -1,0 +1,91 @@
+name: Bug report
+description: Something does not work, or it works in a wrong way.
+title: "Bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for the report. Pahest was tested on few Macs, so each report helps.
+
+        Do not paste text from your sessions. This issue is public. Read all output before you paste it, and replace your user name with `you`.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: "What happened?"
+      description: "Say what you did, what you saw, and what you expected to see."
+      placeholder: |
+        1. I ran pahest and pressed Enter.
+        2. The run stopped at "Codex sessions" with a message.
+        3. I expected the backup to complete.
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: "Where is the problem?"
+      options:
+        - "Install or update"
+        - "The backup run in the Terminal"
+        - "The list of sessions (index.html)"
+        - "The page of one session"
+        - "The Pictures page"
+        - "The report (report.html)"
+        - "The rebuild of the pages (--regenerate)"
+        - "A run with a saved profile (--profile)"
+        - "Something else"
+    validations:
+      required: true
+  - type: dropdown
+    id: apps
+    attributes:
+      label: "Which app is the problem about?"
+      description: "You can choose more than one."
+      multiple: true
+      options:
+        - "Claude Code"
+        - "Codex"
+        - "Claude desktop"
+        - "No app in particular"
+  - type: input
+    id: version
+    attributes:
+      label: "Version of Pahest"
+      description: "Run `pahest --version` in the Terminal."
+      placeholder: "pahest 0.1.2"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: "How did you install Pahest?"
+      options:
+        - "Homebrew (brew install)"
+        - "From the source code (git clone)"
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: "Version of macOS"
+      description: "Open the Apple menu, then About This Mac. Or run `sw_vers -productVersion` in the Terminal."
+  - type: input
+    id: app-versions
+    attributes:
+      label: "Versions of the apps"
+      description: "Fill this in if the problem is about the sessions of one app. The part App versions of `report.html` lists the versions."
+  - type: textarea
+    id: output
+    attributes:
+      label: "Output or log"
+      description: |
+        Paste the last lines that Pahest printed in the Terminal, or the lines near the problem from `backup.log` in the folder of the backup.
+        Read the lines first. They can show the names of your folders and projects.
+      render: text
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: "Before you send"
+      options:
+        - label: "I removed personal data and text from my sessions from this report."
+          required: true

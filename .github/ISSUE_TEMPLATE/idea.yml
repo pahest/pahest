@@ -1,0 +1,53 @@
+name: Idea
+description: Propose a new feature, a new app to back up, or a change to how Pahest works.
+title: "Idea: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for the idea.
+
+        Pahest has rules that it never breaks. It only reads the data of the apps, it never connects to the internet, and it shortens nothing. So it cannot, for example, download chats from claude.ai or chatgpt.com. [AGENTS.md](https://github.com/pahest/pahest/blob/main/AGENTS.md) has all the rules.
+
+        Do not paste text from your sessions. This issue is public.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: "What is the idea about?"
+      options:
+        - "A new app to back up"
+        - "The backup run in the Terminal"
+        - "The web pages (lists, sessions, pictures)"
+        - "The report"
+        - "Install or update"
+        - "The documents"
+        - "Something else"
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: "What problem do you want to solve?"
+      description: "Say what you try to do, and what stops you now."
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: "What do you propose?"
+      description: "Say what Pahest does after the change. For a new app, say where the app keeps its data on a Mac, if you know."
+    validations:
+      required: true
+  - type: textarea
+    id: other-ways
+    attributes:
+      label: "Other ways"
+      description: "Other ways to solve the problem that you tried or thought about. You can leave this empty."
+  - type: checkboxes
+    id: help
+    attributes:
+      label: "Can you help?"
+      options:
+        - label: "I can make a pull request for this idea."
+        - label: "I can test the change on my Mac."

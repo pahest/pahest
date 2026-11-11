@@ -57,4 +57,5 @@ Click a screenshot to see it full size. More are in [docs/screenshots](docs/scre
 
 - [Everything in detail](docs/details.md): what is saved, the options, how the backup is checked, disk space.
 - [How it is built](AGENTS.md): design rules for people and AI agents who change the code.
+- [How to contribute](CONTRIBUTING.md): report a problem, propose an idea, or change the code.
 - [License](LICENSE): MIT.
