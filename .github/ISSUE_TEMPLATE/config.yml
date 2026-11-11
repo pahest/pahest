@@ -1,5 +1,5 @@
 blank_issues_enabled: true
 contact_links:
-  - name: Read the documents first
-    url: https://github.com/pahest/pahest/blob/main/docs/details.md
-    about: What is saved, the options, how the backup is checked, and how much disk space it needs.
+  - name: Read the guide first
+    url: https://pahest.revdoku.site
+    about: How to install Pahest, make a backup, read it, and what to do when a message shows.
