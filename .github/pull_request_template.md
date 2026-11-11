@@ -1,4 +1,4 @@
-<!-- Thank you for your help with Pahest. Read AGENTS.md first: it has the rules and a map of the code. -->
+<!-- Thank you for your help with Pahest. Read CONTRIBUTING.md first. AGENTS.md has the rules and a map of the code. -->
 
 ## What this changes
 

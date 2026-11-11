@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Read the documents first
+    url: https://github.com/pahest/pahest/blob/main/docs/details.md
+    about: What is saved, the options, how the backup is checked, and how much disk space it needs.
