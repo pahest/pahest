@@ -186,13 +186,17 @@ def destination_error(folder: Path) -> str:
     parts = folder.parts
     if len(parts) >= 3 and parts[1] == "Volumes" and not Path("/Volumes", parts[2]).is_dir():
         return f"the disk “{parts[2]}” is not connected ({folder})"
+    if not folder.parent.is_dir():        # only the last folder of the path is made here
+        return f"{folder.parent} does not exist; make that folder first, or choose another one"
     guard.allow(folder)
     try:
-        folder.mkdir(parents=True, exist_ok=True)
+        folder.mkdir(exist_ok=True)
         probe = folder / f"{TMP_MARK}-write-test-{os.getpid()}"
         probe.write_bytes(b"")
         probe.unlink()
         next(iter(folder.iterdir()), None)
+    except guard.ReadOnlyViolation:       # e.g. a link that leads somewhere else
+        return f"{folder} leads to a place where pahest does not write; choose another folder"
     except OSError as e:
         hint = " (macOS may need you to allow access to this disk or folder)" if \
             isinstance(e, PermissionError) else ""
@@ -304,7 +308,8 @@ def _print_destination(log: Log, pre: Pre) -> None:
     else:
         log.note("Files are copied in full, which takes longer (clones need the same APFS disk as the apps).")
     mark = log.OK if pre.free > pre.needed * 1.1 + (1 << 30) else log.FAIL
-    log.line(f"  {mark} Free space: {human(pre.free)} · this backup needs about {human(pre.needed)}")
+    amount, unit = human(pre.needed).split(" ")    # "1.8+ GB": an estimate, the run can need more
+    log.line(f"  {mark} Free space: {human(pre.free)} · this backup needs {amount}+ {unit}")
     log.detail(f"  Previous backup: {pre.previous_name} (used to keep items the apps deleted)" if pre.previous_name
                else "  No previous backup: this is the first one.")
 

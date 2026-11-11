@@ -97,7 +97,7 @@ Five filters at the top narrow the list. Each starts at **All** and shows how ma
 - **Type:** conversations with you, or subagents and automatic reviews that an app ran by itself.
 - **Date:** Today, Yesterday, Last 7 days, Last 30 days, Year to date.
 
-The filters you choose stay in the page address, so they are still set when you come back from a session. Each app has its own list page (linked at the bottom of `index.html`), made from the same template with the same filters. All pages share one stylesheet and one script in `readable/assets/`, and one list of sessions, `readable/items.js`.
+The filters you choose stay in the page address, so they are still set when you come back from a session. Each app has its own list page (in the top bar of every page), made from the same template with the same filters. All pages share one stylesheet and one script in `readable/assets/`, and one list of sessions, `readable/items.js`.
 
 Each session page has **← Previous** and **Next →** at the top and the bottom. They follow the list you came from: if you filtered to "Codex, last 7 days", Next opens the next session in that list, and "↑ List" takes you back to it with your filters.
 
@@ -192,7 +192,7 @@ Every backup is complete, but it does not have to use the full space each time:
 - **Unchanged generated files** (plain copies of Codex sessions, readable copies) that are byte-for-byte the same as in the previous backup are cloned from it in the same way.
 - **On another disk** (for example an exFAT USB drive), files are copied in full.
 
-The first backup of Codex's compressed sessions needs about three times their compressed size for the plain copies, and the readable copies add about 15% of the transcripts' size. The prechecks show the free space and an estimate.
+The first backup of Codex's compressed sessions needs about three times their compressed size for the plain copies, and the readable copies add about 15% of the transcripts' size. The prechecks show the free space and an estimate, such as `1.8+ GB`: the run can need more, for example when a new version of Pahest changes every web page.
 
 ## Development
 
@@ -209,6 +209,8 @@ The look of the pages and reports is in `src/pahest/templates/`, not in the Pyth
 - `style.css`, `report.css`, `app.js`: the style sheets and the pages' script.
 
 They use a small subset of [Mustache](https://mustache.github.io): `{{name}}` (escaped), `{{{name}}}` (as it is), `{{#name}}…{{/name}}` (lists and conditions), `{{^name}}…{{/name}}` and `{{> file}}`. `src/pahest/template.py` describes it in full. Only the text of the conversations themselves (Markdown to HTML) is built in code. After changing a template, run `pahest --regenerate` to see it on an existing backup.
+
+Each backup keeps a copy of the templates that its pages were made from, in `readable/templates/`. A rebuild replaces only the pages, never the apps' files. A page, a Markdown file or a picture that comes out the same as before is stored as a clone of the old one, so a rebuild takes new disk space only for the pages that changed.
 
 ## License
 

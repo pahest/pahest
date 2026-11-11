@@ -592,6 +592,18 @@ class RegenerateTest(FakeHomeTest):
         self.assertIn(str(b), out)
         self.assertEqual(len(json.loads((b / "backup.json").read_text())["regenerated"]), 2)
 
+    def test_a_rebuild_stores_unchanged_pages_as_clones_and_keeps_the_templates(self):
+        from pahest import readable, template
+        b = self.backup()
+        for name in ("page.html", "style.css", "app.js", "report.html"):
+            self.assertEqual((b / readable.TEMPLATES / name).read_text(), template.source(name))
+        pages = sum(1 for line in (b / "checksums.sha256").read_text().splitlines()
+                    if line[66:] in ("index.html", "README.md") or line[66:].startswith("readable/"))
+        code, out = self.run_cli("--regenerate", str(b))                  # same version: no page changes
+        self.assertEqual(code, 0, out)
+        self.assertIn(f"({pages} the same as before, they take no new disk space)", out)
+        self.assert_checksums_match(b)
+
     def test_a_failure_puts_the_old_pages_back(self):
         from pahest import readable, regenerate
         b = self.backup()

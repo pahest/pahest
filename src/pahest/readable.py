@@ -47,6 +47,7 @@ from .store import DiskFull, clone_or_copy
 
 ID = "readable"
 ROOT = "readable"
+TEMPLATES = ROOT + "/templates"     # a copy of the templates the pages were made from
 # Everything that is part of a conversation is shown in full, never shortened, on the web page and in
 # the Markdown copy: your messages, the model's text, thinking and tool calls (every input), every tool
 # result, and what the app added to the conversation (instructions, reminders, attached files, hook
@@ -2044,6 +2045,8 @@ def _web(w: Writer, stamp: str, res: Result) -> None:
     w.text(htmlview.ITEMS_JS, htmlview.items_js(items, links, about))
     w.text(f"{htmlview.ASSETS}/style.css", htmlview.style_css())
     w.text(f"{htmlview.ASSETS}/app.js", htmlview.app_js())
+    for name in template.names():         # the templates these pages were made from, kept with the backup
+        w.text(f"{TEMPLATES}/{name}", template.source(name))
 
     made = 0
     for md_rel in mds:

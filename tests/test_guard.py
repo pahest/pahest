@@ -117,6 +117,13 @@ class DestinationTest(TempDirTest):
             self.assertEqual(precheck.destination_error(good), "", good)
         self.assertNotIn(str(h / "Library"), [str(p) for p in paths.cloud_folders()])
 
+    def test_a_folder_whose_parent_is_missing_gets_a_plain_reason(self):
+        why = precheck.destination_error(self.home / "Documents" / "pahest-backups")
+        self.assertIn(f"{self.home / 'Documents'} does not exist; make that folder first", why)
+        self.assertNotIn("only reads", why)
+        self.assertNotIn("macOS", why)
+        self.assertFalse((self.home / "Documents").exists())               # only the last folder is ever made
+
 
 class VersionsTest(TempDirTest):
     def test_versions_are_read_without_running_the_programs(self):
