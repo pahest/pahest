@@ -36,12 +36,21 @@ def source(name: str) -> str:
     return (FOLDER / name).read_text(encoding="utf-8")
 
 
+_names: List[str] = []
+
+
+def names() -> List[str]:
+    """The names of all template files, as they were when first asked."""
+    if not _names:
+        _names.extend(f.name for f in sorted(FOLDER.iterdir()) if f.is_file() and not f.name.startswith("."))
+    return list(_names)
+
+
 def preload() -> None:
     """Read every template now, so a run does not depend on the files staying in place while it works
     (and stops at once, with a clear error, if one is missing)."""
-    for f in sorted(FOLDER.iterdir()):
-        if f.is_file() and not f.name.startswith("."):
-            source(f.name)
+    for name in names():
+        source(name)
 
 
 def _parse(text: str, name: str) -> list:

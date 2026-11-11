@@ -22,8 +22,8 @@ from typing import List, Optional, Tuple
 from . import HOME_URL, SLOGAN, TOOL_NAMES, __version__, guard, origins, paths, precheck, readable, report, tool_version
 from .log import Log, fmt_dur, plural
 from .result import Ctx, Result
-from .store import (CHECKSUMS, DELETED_LIST, Entry, Store, Zstd, read_checksums, read_deleted_list, sha256_file,
-                    write_checksums)
+from .store import (CHECKSUMS, DELETED_LIST, Entry, Previous, Store, Zstd, read_checksums, read_deleted_list,
+                    sha256_file, write_checksums)
 
 ASIDE = ".regenerate-old"          # the old pages, until the new ones are complete
 DONE = ".done"                     # inside ASIDE: the new pages are complete; the new checksum list is next to it
@@ -165,7 +165,11 @@ def run(target: Optional[str], log: Log, banner: bool = True) -> int:
     for name in (readable.ROOT,) + TOP_PAGES:
         _move(folder / name, aside / name)
     stamp = str(data.get("name") or folder.name)
-    ctx = Ctx(store, log, {}, str(data.get("started") or stamp)[:10], Zstd())
+    # the old pages count as the "previous backup" of the pages: a new file that is byte for byte the
+    # same as the old one (pictures, Markdown, pages a template change did not touch) is stored as a
+    # clone of it, so only what really changed takes new disk space
+    old_pages = Previous(aside, stamp, {r: sha for r, sha in hashes.items() if is_page(r)}, {})
+    ctx = Ctx(store, log, {readable.ID: old_pages}, str(data.get("started") or stamp)[:10], Zstd())
     try:
         res, pages, problems = _build_and_check(ctx, stamp, store, log)
         write_checksums(store, aside / CHECKSUMS)     # the new list goes into place together with "done"
@@ -182,7 +186,9 @@ def run(target: Optional[str], log: Log, banner: bool = True) -> int:
         for p in problems[:10]:
             log.line(f"    {log.FAIL} {p}")
     else:
-        log.ok(f"{plural(len(pages), 'files')} written and read back; {CHECKSUMS} updated")
+        same = sum(1 for r in pages if store.manifest[r].how == "clone-previous")
+        log.ok(f"{plural(len(pages), 'files')} written and read back ({same:,} the same as before, "
+               f"they take no new disk space); {CHECKSUMS} updated")
 
     # the report: the readable part and the totals as they are now, and a note of this rebuild
     rels = store.rels_under(res.folder)
