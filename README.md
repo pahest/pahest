@@ -30,8 +30,6 @@ Press **Enter** to start the backup. At the end, hold **Cmd** and click the link
 
 <a href="docs/screenshots/pahest-command-line.png"><img src="docs/screenshots/pahest-command-line.png" alt="Pahest in the Terminal" width="720"></a>
 
-*The start screen: your backups folder, the last backups, what was found on the Mac, and one question.*
-
 - **Stop:** press **Ctrl+C** at any time. What is saved by then is kept.
 - **Next backup:** run `pahest` again. Every run makes a new, complete backup.
 - **Update:** `brew upgrade pahest`.
@@ -39,26 +37,14 @@ Press **Enter** to start the backup. At the end, hold **Cmd** and click the link
 
 ## Screenshots
 
-Click a screenshot to see it full size.
-
 <table>
 <tr>
-<td width="50%" valign="top"><a href="docs/screenshots/pahest-view-all-sessions.png"><img src="docs/screenshots/pahest-view-all-sessions.png" alt="All sessions"></a><br><b>All sessions.</b> Every session from every app in one list, newest first, with dates to jump to.</td>
-<td width="50%" valign="top"><a href="docs/screenshots/pahest-single-session.png"><img src="docs/screenshots/pahest-single-session.png" alt="One session"></a><br><b>One session.</b> Every message in full. Pictures are small until you click them; <code>[Image #5]</code> opens its picture.</td>
-</tr>
-<tr>
-<td width="50%" valign="top"><a href="docs/screenshots/pahest-pictures.png"><img src="docs/screenshots/pahest-pictures.png" alt="Pictures"></a><br><b>Pictures.</b> Every picture from your sessions on one page. Click one to see it large, or open its chat.</td>
-<td width="50%" valign="top"><a href="docs/screenshots/pahest-search-in-sessions.png"><img src="docs/screenshots/pahest-search-in-sessions.png" alt="Search"></a><br><b>Search.</b> Type a few words to find sessions by title, folder or the start of the conversation.</td>
-</tr>
-<tr>
-<td width="50%" valign="top"><a href="docs/screenshots/pahest-filter-by-folder.png"><img src="docs/screenshots/pahest-filter-by-folder.png" alt="Filter by folder"></a><br><b>Filter by folder.</b> Type a part of a path, or choose from the list. The busiest folders come first.</td>
-<td width="50%" valign="top"><a href="docs/screenshots/pahest-filter-by-app.png"><img src="docs/screenshots/pahest-filter-by-app.png" alt="Filter by app"></a><br><b>Filter by app.</b> Claude Code, Codex or Claude desktop.</td>
-</tr>
-<tr>
-<td width="50%" valign="top"><a href="docs/screenshots/pahest-filter-by-opened-in.png"><img src="docs/screenshots/pahest-filter-by-opened-in.png" alt="Filter by where it was opened"></a><br><b>Filter by where it was opened.</b> Desktop app, Terminal, or Automation (started by another program).</td>
-<td width="50%" valign="top"><a href="docs/screenshots/pahest-filter-by-type.png"><img src="docs/screenshots/pahest-filter-by-type.png" alt="Filter by type"></a><br><b>Filter by type.</b> Your conversations, or subagents and reviews.</td>
+<td width="50%" valign="top"><a href="docs/screenshots/pahest-view-all-sessions.png"><img src="docs/screenshots/pahest-view-all-sessions.png" alt="All sessions"></a><br><b>All sessions</b>, with search and filters.</td>
+<td width="50%" valign="top"><a href="docs/screenshots/pahest-single-session.png"><img src="docs/screenshots/pahest-single-session.png" alt="One session"></a><br><b>One session</b>, with every message.</td>
 </tr>
 </table>
+
+Click a screenshot to see it full size. More are in [docs/screenshots](docs/screenshots).
 
 ## Limits
 
