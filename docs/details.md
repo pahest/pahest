@@ -2,7 +2,7 @@
 
 Pahest makes a local backup of your sessions with Claude Code and Codex on a Mac. It also makes web pages from the backup, so you can read and search your sessions offline.
 
-The guide with screenshots is at [pahest.revdoku.site](https://pahest.revdoku.site).
+The guide with screenshots is at [pahest.revdoku.net](https://pahest.revdoku.net).
 
 - Pahest does not back up your projects. It saves the sessions, not the code and the documents in your project folders.
 - Pahest only reads the files of the apps. It does not change them.
